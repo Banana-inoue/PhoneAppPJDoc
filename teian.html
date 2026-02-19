@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>勤怠システム アーキテクチャ選定について</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            mermaid.initialize({
+                startOnLoad: true,
+                theme: 'base',
+                themeVariables: {
+                    primaryColor: '#e0e7ff',
+                    edgeLabelBackground: '#ffffff',
+                    tertiaryColor: '#f3e8ff'
+                }
+            });
+        });
+    </script>
+    <style>
+        :root {
+            --primary: #1e40af;
+            /* Indigo 800 */
+            --danger: #b91c1c;
+            /* Red 700 */
+            --success: #15803d;
+            /* Green 700 */
+            --bg-body: #f8fafc;
+            --bg-card: #ffffff;
+            --text-main: #1e293b;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+            line-height: 1.6;
+            color: var(--text-main);
+            background: var(--bg-body);
+            padding: 40px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+
+        /* Slide / Section Style */
+        .slide {
+            background: var(--bg-card);
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+            padding: 40px;
+            margin-bottom: 50px;
+            border-top: 6px solid var(--primary);
+        }
+
+        h1 {
+            font-size: 2.2em;
+            margin-bottom: 10px;
+            color: var(--primary);
+        }
+
+        h2 {
+            font-size: 1.6em;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        h3 {
+            font-size: 1.3em;
+            margin: 25px 0 15px 0;
+            color: #334155;
+        }
+
+        p {
+            margin-bottom: 15px;
+        }
+
+        /* Comparison Table */
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 20px 0;
+        }
+
+        th,
+        td {
+            padding: 15px;
+            border: 1px solid #e2e8f0;
+            text-align: left;
+        }
+
+        th {
+            background: #f1f5f9;
+        }
+
+        .good {
+            background-color: #dcfce7;
+            color: var(--success);
+            font-weight: bold;
+        }
+
+        .bad {
+            background-color: #fee2e2;
+            color: var(--danger);
+            font-weight: bold;
+        }
+
+        /* Diagrams */
+        .diagram-box {
+            background: white;
+            border: 1px solid #cbd5e1;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        /* Callouts */
+        .alert {
+            background-color: #fef2f2;
+            border-left: 5px solid var(--danger);
+            padding: 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .alert h4 {
+            color: var(--danger);
+            margin-bottom: 10px;
+        }
+
+        .benefit {
+            background-color: #eff6ff;
+            border-left: 5px solid var(--primary);
+            padding: 20px;
+            border-radius: 4px;
+            margin: 20px 0;
+        }
+
+        .benefit h4 {
+            color: var(--primary);
+            margin-bottom: 10px;
+        }
+
+        ul {
+            margin-left: 25px;
+            margin-bottom: 20px;
+        }
+
+        li {
+            margin-bottom: 8px;
+        }
+    </style>
+</head>
+
+<body>
+    <div class="container">
+
+        <div class="slide" style="text-align: center; padding: 80px 40px;">
+            <p style="color: #64748b; font-weight: bold;">チーム内共有資料</p>
+            <h1 style="font-size: 2.5em; margin: 30px 0;">勤怠システム<br>アーキテクチャ構成案の比較</h1>
+            <p style="font-size: 1.2em;">アプリ完結型 vs サーバー管理型 (Spring Boot)</p>
+            <p style="margin-top: 50px;">2026年2月12日</p>
+        </div>
+
+        <div class="slide">
+            <h2>📊 比較サマリ</h2>
+            <p>現在検討中の2案について、開発・運用の観点からメリット・デメリットを整理しました。<br>
+                結論として、<strong>「B案: サーバー管理型」</strong>の方が、長期的な保守コストとリスクを低く抑えられると考えています。</p>
+
+            <table>
+                <thead>
+                    <tr>
+                        <th style="width: 20%">評価項目</th>
+                        <th style="width: 40%">A案: スマホアプリ完結</th>
+                        <th style="width: 40%">B案: サーバー管理 (推奨)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>セキュリティ</strong></td>
+                        <td class="bad">× 危険 (API Keyがアプリ内に露出)</td>
+                        <td class="good">◎ 安全 (サーバー内で完結)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>データの整合性</strong></td>
+                        <td class="bad">× 不安 (通信エラーでズレる)</td>
+                        <td class="good">◎ 確実 (自動リトライ機能)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>アプリ改修コスト</strong></td>
+                        <td class="bad">× 高い (API仕様変更で再配布必須)</td>
+                        <td class="good">◎ 低い (ロジックはサーバー側)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>将来性</strong></td>
+                        <td>△ クラウド化時に作り直し</td>
+                        <td class="good">◎ クラウド(コンテナ)移行が容易</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+
+        <div class="slide">
+            <h2>⚠️ 懸念点1: APIキー管理の問題</h2>
+            <p>SlackやfreeeのAPIを利用するための<strong>「Client Secret」</strong>の管理場所が最大の課題です。</p>
+
+            <div class="alert">
+                <h4>🈲 アプリ内に埋め込むリスク</h4>
+                <p>アプリ完結型の場合、ビルドされたアプリ内にSecretを持たせる必要があります。<br>
+                    アプリの中身は解析（リバースエンジニアリング）が容易なため、万が一Secretが流出すると、<strong>会社のアカウントが悪用されるセキュリティインシデント</strong>に直結します。</p>
+            </div>
+
+            <div class="diagram-box">
+                <div class="mermaid">
+                    flowchart LR
+                    subgraph Risky [× A案: アプリ完結]
+                    AppA[📱スマホアプリ] -- 鍵を内包 --> SecretA[🔑 Secret]
+                    NoteA[※解析可能] -.-> SecretA
+                    end
+
+                    subgraph Safe [◎ B案: サーバー管理]
+                    AppB[📱スマホアプリ] --> |打刻リクエスト| Server[🔒 自社サーバー]
+                    Server -- 厳重保管 --> SecretB[🔑 Secret]
+                    style SecretB fill:#dcfce7,stroke:#15803d
+                    end
+                </div>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>📉 懸念点2: 「片方だけ失敗」問題</h2>
+            <p>モバイル通信は不安定です。<br>
+                アプリ側でSlackとfreeeに順番にアクセスする場合、以下のケースでデータ不整合が発生し、運用での手修正が必要になります。</p>
+
+            <div class="mermaid">
+                sequenceDiagram
+                participant App as 📱 アプリ
+                participant Slack as 💬 Slack
+                participant Freee as 📊 freee
+
+                App->>Slack: 1. 出勤投稿
+                Slack-->>App: OK (成功)
+                App->>Freee: 2. 打刻登録
+                Note right of App: ⚡ ここで電波が切れる
+                Freee--xApp: Timeout (失敗)
+                Note right of App: 結果: Slackには出たがfreeeには無い<br>→ 誰かが手動修正するハメに...
+            </div>
+
+            <h3>B案 (サーバー管理) の解決策</h3>
+            <ul>
+                <li>アプリはサーバーに1回投げるだけ。あとはサーバーが責任を持つ。</li>
+                <li>サーバー側で<strong>「ジョブキュー」</strong>を使い、成功するまで自動リトライする仕組みを導入することで、データのズレをゼロにできます。</li>
+            </ul>
+        </div>
+
+        <div class="slide">
+            <h2>🚀 Spring Boot (Java) を推す理由</h2>
+            <p>「なぜサーバーを立てるのか？」「なぜSpring Bootなのか？」についての技術的なメリットです。</p>
+
+            <div class="benefit">
+                <h4>🛠️ 1. アプリチームの負担軽減</h4>
+                <p>複雑なトークン管理（リフレッシュ処理など）やAPIのエラーハンドリングを全てサーバー側に寄せられます。<br>
+                    アプリ側は「打刻APIを叩くだけ」のシンプルな作りにでき、UI開発に集中できます。</p>
+            </div>
+
+            <div class="benefit">
+                <h4>☁️ 2. 将来的なクラウド移行 (Cloud Ready)</h4>
+                <p>Spring Bootアプリはコンテナ化（Docker）が非常に容易です。<br>
+                    現在はオンプレミス運用でも、将来的にAWSやAzureへ移行する際、コードをほとんど変えずにそのまま持っていけるため、作った資産が無駄になりません。</p>
+            </div>
+        </div>
+
+        <div class="slide">
+            <h2>✅ まとめ</h2>
+            <p>「アプリ完結」は初期の手間が少なく見えますが、運用後のトラブル（データ不整合対応やセキュリティ事故）のリスクが高いです。</p>
+            <p>今回はオンプレミス環境も使える状況ですので、<strong>「B案: サーバー管理型」</strong>で進めるのが、チーム全体の工数とリスクを最小化できる最善手だと考えます。</p>
+
+            <p style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+                <strong>Next Action:</strong><br>
+                詳細な設計書（v3.3）を作成済みです。この構成で進めて問題ないか、ご確認をお願いします。
+            </p>
+        </div>
+
+    </div>
+</body>
+</html>
