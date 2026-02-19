@@ -1118,7 +1118,7 @@
 
                         <h4>⚡ 操作の簡便性</h4>
 
-                        <p>通常は1タップ完了。必要に応じて「時刻変更」も可能な柔軟な運用。</p>
+                        <p>初回ログイン以降は自動認証。通常は1タップで打刻完了。必要に応じて「時刻変更」も可能な柔軟な運用。</p>
 
                     </div>
 
@@ -1362,7 +1362,9 @@
 
                         Server->>Server: ユーザー登録or特定 (DB)
 
-                        Server-->>App: 自社JWT返却 (ログイン完了)
+                        Server-->>App: 自社JWT + Refresh Token返却 (ログイン完了)
+
+                        Note right of App: JWT・Refresh TokenをSecure Storageへ保存<br>次回起動時はこのトークンで自動ログイン
 
                         Note right of App: 【Step 2】外部連携設定 (初回のみ)
 
@@ -1488,7 +1490,9 @@
 
                 <h2>🔄 JWTアクセストークン再取得フロー</h2>
 
-                <p>アプリが保持するJWT（アクセストークン）の有効期限が切れた際、バックグラウンドでリフレッシュトークンを使用して新しいJWTを取得するフローです。</p>
+                <p>アプリ起動時やAPI通信時にJWT（アクセストークン）の有効期限が切れていた場合、バックグラウンドでリフレッシュトークンを使用して新しいJWTを自動取得するフローです。
+                    <strong>ユーザーは初回ログイン以降、通常は再ログインの必要がありません。</strong>
+                </p>
 
 
 
@@ -1508,17 +1512,17 @@
 
 
 
-                        Note right of App: APIリクエスト時
+                        Note right of App: アプリ起動時 or APIリクエスト時
 
-                        App->>Server: 1. APIリクエスト (JWT期限切れ)
+                        App->>App: Secure StorageからJWT/Refresh Token読込
 
-                        Server-->>App: 401 Unauthorized
+                        alt JWTが有効期限内
 
+                        App->>App: そのまま利用 (自動ログイン完了)
 
+                        else JWTが期限切れ
 
-                        Note right of App: トークン更新処理 (Middleware)
-
-                        App->>Server: 2. 更新リクエスト (API: /api/auth/refresh)
+                        App->>Server: 更新リクエスト (API: /api/auth/refresh)
 
                         Note right of Server: Body: { refreshToken: "..." }
 
@@ -1526,15 +1530,17 @@
 
                         alt 有効
 
-                        Server-->>App: 200 OK (新しいJWT返却)
+                        Server-->>App: 200 OK (新JWT + 新Refresh Token)
 
-                        App->>App: 新JWTを保存 & リクエスト再送
+                        App->>App: 新トークンを保存 (自動ログイン完了)
 
                         else 無効/期限切れ
 
-                        Server-->>App: 401 Unauthorized (再ログイン要求)
+                        Server-->>App: 401 Unauthorized
 
-                        App->>App: ログアウト処理 (ログイン画面へ遷移)
+                        App->>App: ログイン画面へ遷移 (再ログインが必要)
+
+                        end
 
                         end
 
@@ -2100,13 +2106,27 @@
 
                                 <td><strong>JWT (自社)</strong></td>
 
-                                <td>アプリ(Secure)</td>
+                                <td>アプリ(SecureStore)</td>
 
                                 <td>署名</td>
 
                                 <td>24時間</td>
 
-                                <td>リフレッシュトークンで更新</td>
+                                <td>リフレッシュトークンで自動更新</td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td><strong>Refresh Token (自社)</strong></td>
+
+                                <td>アプリ(SecureStore)</td>
+
+                                <td>-</td>
+
+                                <td>30日間</td>
+
+                                <td>JWT更新時にRotation (期限内は再ログイン不要)</td>
 
                             </tr>
 
@@ -2291,11 +2311,15 @@
 
                         graph LR
 
-                        Splash["起動画面"] --> CheckAuth{"ログイン状態"}
+                        Splash["起動画面"] --> CheckToken{"Secure Storage<br>にトークンあり?"}
 
-                        CheckAuth -- "未ログイン" --> Login["ログイン画面"]
+                        CheckToken -- "トークンなし<br>(初回起動)" --> Login["ログイン画面"]
 
-                        CheckAuth -- "ログイン済" --> Main["メイン画面"]
+                        CheckToken -- "トークンあり" --> TryAuth["自動認証<br>(JWT/Refresh)"]
+
+                        TryAuth -- "成功" --> Main["メイン画面"]
+
+                        TryAuth -- "失敗<br>(Refresh期限切れ)" --> Login
 
                         Login --> |"Google認証"| Main
 
@@ -2325,7 +2349,7 @@
 
                     <div class="smartphone">
 
-                        <div class="smartphone-header">ログイン</div>
+                        <div class="smartphone-header">ログイン (初回のみ)</div>
 
                         <div class="smartphone-body">
 
@@ -2336,6 +2360,10 @@
                                 <span style="font-size: 1.2em;">G</span> Googleでログイン
 
                             </button>
+
+                            <p style="font-size: 0.7em; color: #9ca3af; margin-top: 15px; text-align: center; line-height: 1.4;">
+                                ※ 2回目以降はこの画面は<br>表示されません
+                            </p>
 
                         </div>
 
@@ -2610,13 +2638,30 @@
 
                     </div>
 
-                    <div class="code-block">// Axios Interceptor Example
+                    <div class="code-block">// Request Interceptor: ヘッダー付与
                         axiosInstance.interceptors.request.use(async (config) => {
                         const token = await SecureStore.getItemAsync('user_jwt');
                         config.headers.Authorization = `Bearer ${token}`;
                         config.headers['X-Request-ID'] = uuidv4();
                         return config;
-                        });</div>
+                        });
+
+                        // Response Interceptor: 401時にRefresh Tokenで自動更新
+                        axiosInstance.interceptors.response.use(
+                        (response) => response,
+                        async (error) => {
+                        if (error.response?.status === 401 && !error.config._retry) {
+                        error.config._retry = true;
+                        const refreshToken = await SecureStore.getItemAsync('refresh_token');
+                        const { data } = await axios.post('/api/auth/refresh', { refreshToken });
+                        await SecureStore.setItemAsync('user_jwt', data.jwt);
+                        await SecureStore.setItemAsync('refresh_token', data.refreshToken);
+                        error.config.headers.Authorization = `Bearer ${data.jwt}`;
+                        return axiosInstance(error.config); // 元のリクエストを再試行
+                        }
+                        return Promise.reject(error);
+                        }
+                        );</div>
 
                 </div>
 
@@ -2626,13 +2671,17 @@
 
                     <h4>✅ 2. 認証トークンの管理ロジック</h4>
 
-                    <p><strong>重要:</strong> アプリ側は「自社のJWT」のみを管理します。Slack/freeeのトークン管理はサーバー側の責任であり、アプリ側は一切関与しません。</p>
+                    <p><strong>重要:</strong> アプリ側は「自社のJWT + Refresh Token」のみを管理します。Slack/freeeのトークン管理はサーバー側の責任であり、アプリ側は一切関与しません。</p>
 
                     <ul>
 
                         <li><strong>保存場所:</strong> <code>SecureStore</code> (Expo/React Native) などのOS標準暗号化領域。</li>
 
+                        <li><strong>永続ログイン:</strong> 初回のGoogleログイン後、JWT + Refresh TokenをSecure Storageに保存します。次回以降のアプリ起動時は保存済みトークンで自動認証するため、<strong>ユーザーは再度Googleログインする必要がありません。</strong></li>
+
                         <li><strong>自動更新:</strong> APIが <code>401 Unauthorized</code> を返した際、自動的に <code>/api/auth/refresh</code> を叩いてJWTを更新し、元のリクエストを再試行する仕組み（Axios Interceptor等）を実装してください。</li>
+
+                        <li><strong>再ログインが必要になるケース:</strong> Refresh Tokenの有効期限切れ（30日間操作なし）、ユーザーによる明示的なログアウト、またはサーバー側でのトークン無効化時のみです。</li>
 
                     </ul>
 
@@ -2672,7 +2721,25 @@
 
                                         ・認証コードをバックエンドへ送信 (<code>POST /api/auth/google</code>)<br>
 
-                                        ・返却されたJWTをSecure Storageへ保存
+                                        ・返却されたJWT + Refresh TokenをSecure Storageへ保存
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td><strong>起動時の自動認証</strong></td>
+
+                                    <td>
+
+                                        ・Secure StorageにJWT/Refresh Tokenが存在するかチェック<br>
+
+                                        ・JWTが有効 → メイン画面へ直接遷移 (ログイン画面をスキップ)<br>
+
+                                        ・JWT期限切れ → Refresh Tokenで自動更新 (<code>/api/auth/refresh</code>)<br>
+
+                                        ・Refresh Tokenも無効 → ログイン画面へ遷移 (再ログインが必要)
 
                                     </td>
 
