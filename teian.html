@@ -11,6 +11,7 @@
             mermaid.initialize({
                 startOnLoad: true,
                 theme: 'base',
+                securityLevel: 'loose',
                 themeVariables: {
                     primaryColor: '#e0e7ff',
                     edgeLabelBackground: '#ffffff',
@@ -22,11 +23,8 @@
     <style>
         :root {
             --primary: #1e40af;
-            /* Indigo 800 */
             --danger: #b91c1c;
-            /* Red 700 */
             --success: #15803d;
-            /* Green 700 */
             --bg-body: #f8fafc;
             --bg-card: #ffffff;
             --text-main: #1e293b;
@@ -43,7 +41,14 @@
             line-height: 1.6;
             color: var(--text-main);
             background: var(--bg-body);
-            padding: 40px;
+            padding: 20px;
+            /* スマホ向けに縮小 */
+        }
+
+        @media (min-width: 768px) {
+            body {
+                padding: 40px;
+            }
         }
 
         .container {
@@ -51,25 +56,40 @@
             margin: 0 auto;
         }
 
-        /* Slide / Section Style */
         .slide {
             background: var(--bg-card);
             border-radius: 12px;
             box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
-            padding: 40px;
-            margin-bottom: 50px;
+            padding: 20px;
+            /* スマホ向けに縮小 */
+            margin-bottom: 30px;
             border-top: 6px solid var(--primary);
         }
 
+        @media (min-width: 768px) {
+            .slide {
+                padding: 40px;
+                margin-bottom: 50px;
+            }
+        }
+
         h1 {
-            font-size: 2.2em;
+            font-size: 1.6em;
+            /* スマホ向けに縮小 */
             margin-bottom: 10px;
             color: var(--primary);
+            line-height: 1.3;
+        }
+
+        @media (min-width: 768px) {
+            h1 {
+                font-size: 2.2em;
+            }
         }
 
         h2 {
-            font-size: 1.6em;
-            margin-bottom: 20px;
+            font-size: 1.3em;
+            margin-bottom: 15px;
             padding-bottom: 10px;
             border-bottom: 2px solid #e2e8f0;
             display: flex;
@@ -78,27 +98,40 @@
         }
 
         h3 {
-            font-size: 1.3em;
-            margin: 25px 0 15px 0;
+            font-size: 1.1em;
+            margin: 20px 0 10px 0;
             color: #334155;
         }
 
         p {
             margin-bottom: 15px;
+            font-size: 0.95em;
         }
 
-        /* Comparison Table */
+        /* テーブルのレスポンシブ対応 */
+        .table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+            /* 横スクロールを許可 */
+            -webkit-overflow-scrolling: touch;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+
         table {
             width: 100%;
+            min-width: 600px;
+            /* スマホでも崩れない最小幅 */
             border-collapse: collapse;
-            margin: 20px 0;
         }
 
         th,
         td {
-            padding: 15px;
+            padding: 12px;
             border: 1px solid #e2e8f0;
             text-align: left;
+            font-size: 0.9em;
         }
 
         th {
@@ -122,45 +155,51 @@
             background: white;
             border: 1px solid #cbd5e1;
             border-radius: 8px;
-            padding: 20px;
-            margin: 20px 0;
-            text-align: center;
+            padding: 15px;
+            margin: 15px 0;
+            overflow-x: auto;
+            /* はみ出し防止 */
         }
 
         /* Callouts */
+        .alert,
+        .benefit {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+        }
+
         .alert {
             background-color: #fef2f2;
             border-left: 5px solid var(--danger);
-            padding: 20px;
-            border-radius: 4px;
-            margin: 20px 0;
-        }
-
-        .alert h4 {
-            color: var(--danger);
-            margin-bottom: 10px;
         }
 
         .benefit {
             background-color: #eff6ff;
             border-left: 5px solid var(--primary);
-            padding: 20px;
-            border-radius: 4px;
-            margin: 20px 0;
         }
 
+        .alert h4,
         .benefit h4 {
-            color: var(--primary);
-            margin-bottom: 10px;
+            margin-bottom: 8px;
+            font-size: 1em;
         }
 
         ul {
-            margin-left: 25px;
+            margin-left: 20px;
             margin-bottom: 20px;
         }
 
         li {
             margin-bottom: 8px;
+            font-size: 0.95em;
+        }
+
+        .next-action {
+            margin-top: 30px;
+            border-top: 1px solid #ddd;
+            padding-top: 20px;
+            font-size: 0.9em;
         }
     </style>
 </head>
@@ -168,132 +207,127 @@
 <body>
     <div class="container">
 
-        <div class="slide" style="text-align: center; padding: 80px 40px;">
-            <p style="color: #64748b; font-weight: bold;">チーム内共有資料</p>
-            <h1 style="font-size: 2.5em; margin: 30px 0;">勤怠システム<br>アーキテクチャ構成案の比較</h1>
-            <p style="font-size: 1.2em;">アプリ完結型 vs サーバー管理型 (Spring Boot)</p>
-            <p style="margin-top: 50px;">2026年2月12日</p>
+        <div class="slide" style="text-align: center; padding: 60px 20px;">
+            <p style="color: #64748b; font-weight: bold; font-size: 0.8em;">チーム内共有資料</p>
+            <h1 style="margin: 20px 0;">勤怠システム<br>アーキテクチャ構成案の比較</h1>
+            <p style="font-size: 1em; color: #475569;">アプリ完結型 vs サーバー管理型 (Spring Boot)</p>
+            <p style="margin-top: 40px; font-size: 0.8em; color: #94a3b8;">2026年2月12日</p>
         </div>
 
         <div class="slide">
             <h2>📊 比較サマリ</h2>
-            <p>現在検討中の2案について、開発・運用の観点からメリット・デメリットを整理しました。<br>
-                結論として、<strong>「B案: サーバー管理型」</strong>の方が、長期的な保守コストとリスクを低く抑えられると考えています。</p>
+            <p><strong>「B案: サーバー管理型」</strong>の方が、長期的な保守コストとリスクを低く抑えられると考えています。</p>
 
-            <table>
-                <thead>
-                    <tr>
-                        <th style="width: 20%">評価項目</th>
-                        <th style="width: 40%">A案: スマホアプリ完結</th>
-                        <th style="width: 40%">B案: サーバー管理 (推奨)</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td><strong>セキュリティ</strong></td>
-                        <td class="bad">× 危険 (API Keyがアプリ内に露出)</td>
-                        <td class="good">◎ 安全 (サーバー内で完結)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>データの整合性</strong></td>
-                        <td class="bad">× 不安 (通信エラーでズレる)</td>
-                        <td class="good">◎ 確実 (自動リトライ機能)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>アプリ改修コスト</strong></td>
-                        <td class="bad">× 高い (API仕様変更で再配布必須)</td>
-                        <td class="good">◎ 低い (ロジックはサーバー側)</td>
-                    </tr>
-                    <tr>
-                        <td><strong>将来性</strong></td>
-                        <td>△ クラウド化時に作り直し</td>
-                        <td class="good">◎ クラウド(コンテナ)移行が容易</td>
-                    </tr>
-                </tbody>
-            </table>
+            <div class="table-wrapper">
+                <table>
+                    <thead>
+                        <tr>
+                            <th style="width: 25%">評価項目</th>
+                            <th style="width: 37.5%">A案: アプリ完結</th>
+                            <th style="width: 37.5%">B案: サーバー (推奨)</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td><strong>セキュリティ</strong></td>
+                            <td class="bad">× API Keyの露出リスク</td>
+                            <td class="good">◎ サーバー内で完結</td>
+                        </tr>
+                        <tr>
+                            <td><strong>データの整合性</strong></td>
+                            <td class="bad">× 通信エラーで不整合</td>
+                            <td class="good">◎ 自動リトライ可能</td>
+                        </tr>
+                        <tr>
+                            <td><strong>改修コスト</strong></td>
+                            <td class="bad">× アプリ再配布が必須</td>
+                            <td class="good">◎ サーバー改修のみ</td>
+                        </tr>
+                        <tr>
+                            <td><strong>将来性</strong></td>
+                            <td>△ クラウド化で作り直し</td>
+                            <td class="good">◎ クラウド移行が容易</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+            <p style="font-size: 0.8em; color: #64748b; text-align: right;">※表は横にスクロールできます</p>
         </div>
 
         <div class="slide">
-            <h2>⚠️ 懸念点1: APIキー管理の問題</h2>
-            <p>SlackやfreeeのAPIを利用するための<strong>「Client Secret」</strong>の管理場所が最大の課題です。</p>
-
+            <h2>⚠️ 懸念1: APIキー管理</h2>
             <div class="alert">
                 <h4>🈲 アプリ内に埋め込むリスク</h4>
-                <p>アプリ完結型の場合、ビルドされたアプリ内にSecretを持たせる必要があります。<br>
-                    アプリの中身は解析（リバースエンジニアリング）が容易なため、万が一Secretが流出すると、<strong>会社のアカウントが悪用されるセキュリティインシデント</strong>に直結します。</p>
+                <p>アプリは解析が容易なため、万が一Secretが流出すると、<strong>会社アカウントの悪用</strong>に直結します。</p>
             </div>
 
             <div class="diagram-box">
                 <div class="mermaid">
-                    flowchart LR
-                    subgraph Risky [× A案: アプリ完結]
-                    AppA[📱スマホアプリ] -- 鍵を内包 --> SecretA[🔑 Secret]
-                    NoteA[※解析可能] -.-> SecretA
+                    flowchart TD
+                    subgraph A [× A案: アプリ完結]
+                    AppA[📱 スマホ] -- 鍵を内包 --> SecretA[🔑 Secret]
+                    NoteA[※解析の危険あり]
                     end
 
-                    subgraph Safe [◎ B案: サーバー管理]
-                    AppB[📱スマホアプリ] --> |打刻リクエスト| Server[🔒 自社サーバー]
+                    subgraph B [◎ B案: サーバー管理]
+                    AppB[📱 スマホ] --> Server[🔒 自社サーバー]
                     Server -- 厳重保管 --> SecretB[🔑 Secret]
-                    style SecretB fill:#dcfce7,stroke:#15803d
                     end
                 </div>
             </div>
         </div>
 
         <div class="slide">
-            <h2>📉 懸念点2: 「片方だけ失敗」問題</h2>
-            <p>モバイル通信は不安定です。<br>
-                アプリ側でSlackとfreeeに順番にアクセスする場合、以下のケースでデータ不整合が発生し、運用での手修正が必要になります。</p>
+            <h2>📉 懸念2: 片方だけ失敗問題</h2>
+            <p>モバイル通信は不安定です。アプリ側で順次処理を行うと、以下の不整合が避けられません。</p>
 
-            <div class="mermaid">
-                sequenceDiagram
-                participant App as 📱 アプリ
-                participant Slack as 💬 Slack
-                participant Freee as 📊 freee
+            <div class="diagram-box">
+                <div class="mermaid">
+                    sequenceDiagram
+                    participant App as 📱 スマホ
+                    participant Slack as 💬 Slack
+                    participant Freee as 📊 freee
 
-                App->>Slack: 1. 出勤投稿
-                Slack-->>App: OK (成功)
-                App->>Freee: 2. 打刻登録
-                Note right of App: ⚡ ここで電波が切れる
-                Freee--xApp: Timeout (失敗)
-                Note right of App: 結果: Slackには出たがfreeeには無い<br>→ 誰かが手動修正するハメに...
+                    App->>Slack: 1. 出勤投稿 (成功)
+                    Slack-->>App: OK
+                    App->>Freee: 2. 打刻登録 (通信断)
+                    Note right of App: ⚡ 失敗！
+                    Note over App,Freee: 結果: Slackのみ登録され<br>データのズレが発生
+                </div>
             </div>
 
-            <h3>B案 (サーバー管理) の解決策</h3>
+            <h3>B案での解決策</h3>
             <ul>
-                <li>アプリはサーバーに1回投げるだけ。あとはサーバーが責任を持つ。</li>
-                <li>サーバー側で<strong>「ジョブキュー」</strong>を使い、成功するまで自動リトライする仕組みを導入することで、データのズレをゼロにできます。</li>
+                <li>アプリはサーバーに1回投げるだけ。</li>
+                <li>サーバー側で<strong>「ジョブキュー」</strong>による自動リトライを行い、ズレをゼロにします。</li>
             </ul>
         </div>
 
         <div class="slide">
-            <h2>🚀 Spring Boot (Java) を推す理由</h2>
-            <p>「なぜサーバーを立てるのか？」「なぜSpring Bootなのか？」についての技術的なメリットです。</p>
+            <h2>🚀 Spring Boot を推す理由</h2>
 
             <div class="benefit">
                 <h4>🛠️ 1. アプリチームの負担軽減</h4>
-                <p>複雑なトークン管理（リフレッシュ処理など）やAPIのエラーハンドリングを全てサーバー側に寄せられます。<br>
-                    アプリ側は「打刻APIを叩くだけ」のシンプルな作りにでき、UI開発に集中できます。</p>
+                <p>複雑なトークン更新やエラー処理をサーバーに集約。アプリ側はUI開発に集中できます。</p>
             </div>
 
             <div class="benefit">
-                <h4>☁️ 2. 将来的なクラウド移行 (Cloud Ready)</h4>
-                <p>Spring Bootアプリはコンテナ化（Docker）が非常に容易です。<br>
-                    現在はオンプレミス運用でも、将来的にAWSやAzureへ移行する際、コードをほとんど変えずにそのまま持っていけるため、作った資産が無駄になりません。</p>
+                <h4>☁️ 2. Cloud Ready</h4>
+                <p>コンテナ化が容易なため、将来AWS等へ移行する際も、資産をそのまま活用できます。</p>
             </div>
         </div>
 
         <div class="slide">
             <h2>✅ まとめ</h2>
-            <p>「アプリ完結」は初期の手間が少なく見えますが、運用後のトラブル（データ不整合対応やセキュリティ事故）のリスクが高いです。</p>
-            <p>今回はオンプレミス環境も使える状況ですので、<strong>「B案: サーバー管理型」</strong>で進めるのが、チーム全体の工数とリスクを最小化できる最善手だと考えます。</p>
+            <p>運用の安定性とセキュリティを考慮し、<strong>「B案: サーバー管理型」</strong>で進めるのが最善です。</p>
 
-            <p style="margin-top: 30px; border-top: 1px solid #ddd; padding-top: 20px;">
+            <div class="next-action">
                 <strong>Next Action:</strong><br>
-                詳細な設計書（v3.3）を作成済みです。この構成で進めて問題ないか、ご確認をお願いします。
-            </p>
+                詳細設計書（v3.3）にて、この構成をベースに進めて良いかご確認をお願いします。
+            </div>
         </div>
 
     </div>
 </body>
+
 </html>
