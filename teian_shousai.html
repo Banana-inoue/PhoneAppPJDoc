@@ -1,874 +1,1926 @@
 <!DOCTYPE html>
+
 <html lang="ja">
 
+
+
 <head>
+
     <meta charset="UTF-8">
+
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
     <title>業務用勤怠打刻システム 設計資料 v3.4</title>
+
     <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+
     <script>
+
         document.addEventListener("DOMContentLoaded", function () {
+
             mermaid.initialize({
+
                 startOnLoad: true,
+
                 theme: 'base',
+
                 themeVariables: {
+
                     primaryColor: '#e0e7ff',
+
                     edgeLabelBackground: '#ffffff',
+
                     tertiaryColor: '#f3e8ff'
+
                 }
+
             });
+
         });
+
     </script>
+
     <style>
         :root {
+
             --primary-gradient: linear-gradient(135deg, #1e40af 0%, #4c1d95 100%);
+
             --primary-color: #1e40af;
+
             --accent-color: #6d28d9;
+
             --text-main: #1f2937;
+
             --text-light: #6b7280;
+
             --bg-body: #f3f4f6;
+
             --bg-card: #ffffff;
+
             --code-bg: #1e293b;
+
             --code-text: #e2e8f0;
+
         }
+
+
 
         * {
+
             margin: 0;
+
             padding: 0;
+
             box-sizing: border-box;
+
         }
+
+
 
         body {
+
             font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+
             line-height: 1.8;
+
             color: var(--text-main);
+
             background: var(--bg-body);
+
             padding: 20px;
+
         }
+
+
 
         .container {
+
             max-width: 1200px;
+
             margin: 0 auto;
+
             background: var(--bg-card);
+
             box-shadow: 0 10px 40px rgba(0, 0, 0, 0.1);
+
             border-radius: 16px;
+
             overflow: hidden;
+
         }
+
+
 
         header {
+
             background: var(--primary-gradient);
+
             color: white;
+
             padding: 60px 40px;
+
             text-align: center;
+
         }
+
+
 
         header h1 {
+
             font-size: 2.2em;
+
             margin-bottom: 10px;
+
             font-weight: 700;
+
         }
+
+
 
         header p {
+
             font-size: 1.1em;
+
             opacity: 0.9;
+
         }
+
+
 
         .content {
+
             padding: 40px;
+
         }
+
+
 
         section {
+
             margin-bottom: 60px;
+
         }
+
+
 
         h2 {
+
             color: var(--primary-color);
+
             font-size: 1.8em;
+
             margin-bottom: 25px;
+
             padding-bottom: 10px;
+
             border-bottom: 2px solid #e5e7eb;
+
             display: flex;
+
             align-items: center;
+
             gap: 10px;
+
         }
+
+
 
         h3 {
+
             color: var(--accent-color);
+
             font-size: 1.4em;
+
             margin: 35px 0 15px 0;
+
         }
+
+
 
         .overview-grid,
+
         .tech-stack {
+
             display: grid;
+
             grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+
             gap: 20px;
+
             margin: 20px 0;
+
         }
+
+
 
         .card {
+
             background: #f9fafb;
+
             padding: 25px;
+
             border-radius: 12px;
+
             border: 1px solid #e5e7eb;
+
             border-left: 4px solid var(--primary-color);
+
             transition: transform 0.2s;
+
             margin-bottom: 20px;
+
         }
+
+
 
         .card:hover {
+
             transform: translateY(-2px);
+
             box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+
         }
+
+
 
         .card h4 {
+
             color: var(--primary-color);
+
             margin-bottom: 10px;
+
             font-size: 1.1em;
+
         }
+
+
 
         .tech-item {
+
             background: linear-gradient(135deg, #eef2ff 0%, #f5f3ff 100%);
+
             color: var(--text-main);
+
             padding: 20px;
+
             border-radius: 12px;
+
             text-align: center;
+
             border: 1px solid #e0e7ff;
+
         }
+
+
 
         .tech-item h4 {
+
             color: var(--primary-color);
+
             margin-bottom: 10px;
+
             font-weight: bold;
+
         }
+
+
 
         /* Diagrams & Code */
+
         .diagram-container {
+
             background: white;
+
             padding: 20px;
+
             border: 1px solid #e5e7eb;
+
             border-radius: 12px;
+
             margin: 20px 0;
+
             overflow-x: auto;
+
             text-align: center;
+
         }
+
+
 
         .code-block {
+
             background: var(--code-bg);
+
             color: var(--code-text);
+
             padding: 20px;
+
             border-radius: 8px;
+
             font-family: 'Consolas', 'Monaco', monospace;
+
             font-size: 0.9em;
+
             overflow-x: auto;
+
             margin: 15px 0;
+
             line-height: 1.5;
+
             border-left: 4px solid #10b981;
+
             /* 左端のインデントを無視して表示 */
+
             white-space: pre;
+
             text-align: left;
+
         }
+
+
 
         /* Tables */
+
         .table-responsive {
+
             overflow-x: auto;
+
             border-radius: 8px;
+
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+
             margin: 20px 0;
+
         }
+
+
 
         table {
+
             width: 100%;
+
             border-collapse: collapse;
+
             min-width: 600px;
+
         }
+
+
 
         th {
+
             background: var(--primary-color);
+
             color: white;
+
             padding: 15px;
+
             text-align: left;
+
             font-weight: 600;
+
         }
+
+
 
         td {
+
             padding: 12px 15px;
+
             border-bottom: 1px solid #e5e7eb;
+
             background: white;
+
         }
+
+
 
         tr:last-child td {
+
             border-bottom: none;
+
         }
+
+
 
         tr:hover td {
+
             background: #f9fafb;
+
         }
+
+
 
         /* Lists & Alerts */
+
         .security-list {
+
             background: #fffbeb;
+
             border-left: 4px solid #f59e0b;
+
             padding: 20px;
+
             border-radius: 6px;
+
             margin: 20px 0;
+
         }
+
+
 
         .security-list h3 {
+
             color: #92400e;
+
             margin-top: 0;
+
             font-size: 1.1em;
+
         }
+
+
 
         .benefit-box {
+
             background: #ecfdf5;
+
             border: 1px solid #d1fae5;
+
             border-radius: 8px;
+
             padding: 20px;
+
             margin: 20px 0;
+
         }
+
+
 
         .note {
+
             background: #eff6ff;
+
             border-left: 4px solid #3b82f6;
+
             padding: 15px 20px;
+
             margin: 20px 0;
+
             border-radius: 4px;
+
             color: #1e3a8a;
+
         }
+
+
 
         .warning {
+
             background: #fff5f5;
+
             border-left: 4px solid #ef4444;
+
             padding: 15px 20px;
+
             margin: 20px 0;
+
             border-radius: 4px;
+
             color: #991b1b;
+
         }
+
+
 
         /* UI Mockup Styles */
+
         .mockup-container {
+
             display: flex;
+
             flex-wrap: wrap;
+
             gap: 30px;
+
             justify-content: center;
+
             margin: 30px 0;
+
         }
+
+
 
         .smartphone {
+
             width: 280px;
+
             height: 550px;
+
             border: 12px solid #333;
+
             border-radius: 30px;
+
             background: #fff;
+
             position: relative;
+
             box-shadow: 0 10px 20px rgba(0, 0, 0, 0.2);
+
             overflow: hidden;
+
             display: flex;
+
             flex-direction: column;
+
         }
+
+
 
         .smartphone-header {
+
             background: #1e40af;
+
             color: white;
+
             padding: 15px 10px;
+
             font-size: 0.9em;
+
             text-align: center;
+
             font-weight: bold;
+
         }
+
+
 
         .smartphone-body {
+
             flex: 1;
+
             padding: 20px;
+
             display: flex;
+
             flex-direction: column;
+
             align-items: center;
+
             justify-content: center;
+
             background: #f8fafc;
+
         }
+
+
 
         .ui-time {
+
             font-size: 2.5em;
+
             font-weight: bold;
+
             color: #333;
+
             margin-bottom: 20px;
+
             font-family: monospace;
+
         }
+
+
 
         .ui-btn {
+
             width: 180px;
+
             height: 180px;
+
             border-radius: 50%;
+
             border: none;
+
             color: white;
+
             font-size: 1.5em;
+
             font-weight: bold;
+
             cursor: pointer;
+
             box-shadow: 0 4px 10px rgba(0, 0, 0, 0.2);
+
             display: flex;
+
             flex-direction: column;
+
             align-items: center;
+
             justify-content: center;
+
             transition: transform 0.1s;
+
         }
+
+
 
         .ui-btn:active {
+
             transform: scale(0.95);
+
         }
+
+
 
         .ui-btn.in {
+
             background: linear-gradient(135deg, #3b82f6, #2563eb);
+
         }
+
+
 
         .ui-btn.out {
+
             background: linear-gradient(135deg, #ef4444, #dc2626);
+
         }
+
+
 
         .ui-link {
+
             margin-top: 20px;
+
             color: #3b82f6;
+
             text-decoration: underline;
+
             font-size: 0.9em;
+
             cursor: pointer;
+
         }
+
+
 
         .ui-modal {
+
             position: absolute;
+
             bottom: 0;
+
             left: 0;
+
             width: 100%;
+
             height: 60%;
+
             background: white;
+
             border-top-left-radius: 20px;
+
             border-top-right-radius: 20px;
+
             box-shadow: 0 -5px 20px rgba(0, 0, 0, 0.1);
+
             padding: 20px;
+
             display: flex;
+
             flex-direction: column;
+
         }
+
+
 
         .ui-input-group {
+
             margin-bottom: 15px;
+
             text-align: left;
+
             width: 100%;
+
         }
+
+
 
         .ui-label {
+
             font-size: 0.8em;
+
             color: #666;
+
             margin-bottom: 5px;
+
             display: block;
+
         }
+
+
 
         .ui-input {
+
             width: 100%;
+
             padding: 8px;
+
             border: 1px solid #ddd;
+
             border-radius: 4px;
+
             font-size: 1em;
+
         }
+
+
 
         .ui-btn-submit {
+
             background: #1e40af;
+
             color: white;
+
             border: none;
+
             padding: 10px;
+
             border-radius: 6px;
+
             margin-top: auto;
+
             font-weight: bold;
+
         }
+
+
 
         .ui-login-btn {
+
             background: white;
+
             border: 1px solid #ddd;
+
             padding: 10px 20px;
+
             border-radius: 4px;
+
             display: flex;
+
             align-items: center;
+
             gap: 10px;
+
             font-weight: bold;
+
             color: #333;
+
             box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+
         }
+
+
 
         footer {
+
             background: #1f2937;
+
             color: #9ca3af;
+
             text-align: center;
+
             padding: 30px;
+
             margin-top: 40px;
+
             border-top: 1px solid #374151;
+
         }
+
+
 
         .badge {
+
             display: inline-block;
+
             padding: 2px 8px;
+
             border-radius: 99px;
+
             font-size: 0.75em;
+
             font-weight: bold;
+
             background: #fee2e2;
+
             color: #991b1b;
+
         }
+
+
 
         .badge.new {
+
             background: #dbeafe;
+
             color: #1e40af;
+
         }
+
+
 
         @media (max-width: 768px) {
+
             header {
-                padding: 40px 20px;
+
+                padding: 30px 15px;
+
             }
+
+
 
             header h1 {
-                font-size: 1.8em;
+
+                font-size: 1.4em;
+
             }
+
+
+
+            header p {
+
+                font-size: 0.95em;
+
+            }
+
+
 
             .content {
-                padding: 20px;
+
+                padding: 15px;
+
             }
+
+
+
+            h2 {
+
+                font-size: 1.3em;
+
+                flex-wrap: wrap;
+
+            }
+
+
+
+            h3 {
+
+                font-size: 1.15em;
+
+            }
+
+
+
+            .card {
+
+                padding: 15px;
+
+            }
+
+
+
+            .code-block {
+
+                padding: 12px;
+
+                font-size: 0.75em;
+
+                border-radius: 6px;
+
+            }
+
+
+
+            table {
+
+                min-width: unset;
+
+                font-size: 0.85em;
+
+            }
+
+
+
+            th,
+            td {
+
+                padding: 8px 10px;
+
+            }
+
+
+
+            .overview-grid,
+
+            .tech-stack {
+
+                grid-template-columns: 1fr;
+
+                gap: 12px;
+
+            }
+
+
+
+            .diagram-container {
+
+                padding: 10px;
+
+            }
+
+
+
+            .mockup-container {
+
+                flex-direction: column;
+
+                align-items: center;
+
+                gap: 20px;
+
+            }
+
+
+
+            .smartphone {
+
+                width: 260px;
+
+                height: 500px;
+
+            }
+
+
+
+            section {
+
+                margin-bottom: 40px;
+
+            }
+
+
+
+            .note,
+            .warning,
+            .security-list {
+
+                padding: 12px 15px;
+
+            }
+
+        }
+
+        @media (max-width: 480px) {
+
+            body {
+
+                padding: 8px;
+
+            }
+
+
+
+            .container {
+
+                border-radius: 8px;
+
+            }
+
+
+
+            header {
+
+                padding: 25px 12px;
+
+            }
+
+
+
+            header h1 {
+
+                font-size: 1.2em;
+
+            }
+
+
+
+            .content {
+
+                padding: 12px;
+
+            }
+
+
+
+            h2 {
+
+                font-size: 1.15em;
+
+            }
+
+
+
+            .code-block {
+
+                font-size: 0.7em;
+
+                padding: 10px;
+
+            }
+
+
+
+            table {
+
+                font-size: 0.8em;
+
+            }
+
+
+
+            th,
+            td {
+
+                padding: 6px 8px;
+
+            }
+
         }
     </style>
+
 </head>
 
+
+
 <body>
+
     <div class="container">
+
         <header>
+
             <h1>🕐 業務用勤怠打刻システム v3.4</h1>
+
             <p>詳細設計 - アプリ実装ToDo完全版</p>
+
         </header>
 
+
+
         <div class="content">
+
             <section>
+
                 <h2>📋 システム概要</h2>
+
                 <p>従業員がスマートフォンアプリから簡単に勤怠打刻を行えるシステムです。基本は1タップの現在時刻打刻ですが、<strong>打刻忘れ時などに備えて時刻の手動指定も可能</strong>です。</p>
 
+
+
                 <div class="overview-grid">
+
                     <div class="card">
+
                         <h4>🎯 主な目的</h4>
+
                         <p>勤怠管理の効率化と、チーム内での出退勤状況の可視化を実現します。</p>
+
                     </div>
+
                     <div class="card">
+
                         <h4>📱 対象デバイス</h4>
+
                         <p>iOS / Android スマートフォンアプリ</p>
+
                     </div>
+
                     <div class="card">
+
                         <h4>👥 想定ユーザー</h4>
+
                         <p>全従業員 約50名以下（オフィス勤務・リモート勤務問わず）</p>
+
                     </div>
+
                     <div class="card">
+
                         <h4>⚡ 操作の簡便性</h4>
+
                         <p>通常は1タップ完了。必要に応じて「時刻変更」も可能な柔軟な運用。</p>
+
                     </div>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>🏗️ システム全体構成図 (Zero Trust + DB Job Queue)</h2>
+
                 <p>Cloudflare Tunnelによるセキュアな接続と、<strong>PostgreSQLを用いた堅牢なジョブ管理</strong>を組み合わせた構成です。</p>
 
+
+
                 <div class="diagram-container">
+
                     <div class="mermaid">
+
                         graph TD
+
                         subgraph Client["📱 クライアントサイド"]
-                        App[スマホアプリ<br>Service Token保持]
+
+                        App["スマホアプリ<br>Service Token保持"]
+
                         end
+
                         subgraph Cloud["☁️ Cloudflare Edge Network"]
-                        CF_DNS[DNS / CDN]
-                        CF_WAF[WAF / DDoS対策]
-                        CF_Access[Zero Trust Access]
+
+                        CF_DNS["DNS / CDN"]
+
+                        CF_WAF["WAF / DDoS対策"]
+
+                        CF_Access["Zero Trust Access"]
+
                         end
+
                         subgraph OnPrem["🏢 社内オンプレミス環境"]
-                        direction TB
-                        Tunneld[cloudflared<br>(Connector)]
-                        Firewall[🔥 Firewall<br>Inbound全拒否]
+
+                        Tunneld["cloudflared<br>(Connector)"]
+
+                        Firewall["🔥 Firewall<br>Inbound全拒否"]
+
                         subgraph Server["アプリケーション"]
-                        Spring[☕ Spring Boot App<br>Port: 8080]
+
+                        Spring["☕ Spring Boot App<br>Port: 8080"]
+
                         end
-                        DB[(🗄️ PostgreSQL<br>App Data + Job Queue)]
+
+                        DB[("🗄️ PostgreSQL<br>App Data + Job Queue")]
+
                         end
+
                         subgraph External["🌍 外部API"]
-                        Google[🔐 Google OAuth]
-                        Slack[💬 Slack API]
-                        Freee[📊 freee API]
+
+                        Google["🔐 Google OAuth"]
+
+                        Slack["💬 Slack API"]
+
+                        Freee["📊 freee API"]
+
                         end
-                        App -->|HTTPS + Service Token| CF_DNS
+
+                        App -->|"HTTPS + Service Token"| CF_DNS
+
                         CF_DNS --> CF_WAF
+
                         CF_WAF --> CF_Access
-                        CF_Access <-->|Secure Tunnel / HTTP2| Tunneld
-                            Tunneld <-->|localhost:8080| Spring
-                                Spring <-->|Read/Write| DB
-                                    Spring <-->|Job Polling (SQL)| DB
-                                        Spring -.->|Async Retry| Google
-                                        Spring -.->|Async Retry| Slack
-                                        Spring -.->|Async Retry| Freee
+
+                        CF_Access <-->|"Secure Tunnel / HTTP2"| Tunneld
+
+                            Tunneld <-->|"localhost:8080"| Spring
+
+                                Spring <-->|"Read/Write"| DB
+
+                                    Spring <-->|"Job Polling SQL"| DB
+
+                                        Spring -.->|"Async Retry"| Google
+
+                                        Spring -.->|"Async Retry"| Slack
+
+                                        Spring -.->|"Async Retry"| Freee
+
                                         style Tunneld fill:#ffe4e6,stroke:#e11d48,stroke-width:2px
+
                                         style Firewall fill:#f3f4f6,stroke:#9ca3af,stroke-dasharray: 5 5
+
                                         style CF_Access fill:#dbeafe,stroke:#1e40af,stroke-width:2px
+
                                         style DB fill:#fff7ed,stroke:#ea580c,stroke-width:2px
+
                     </div>
+
                 </div>
+
+
 
                 <div class="note">
+
                     <strong>🔒 Cloudflare Tunnelの利点:</strong>
+
                     自社ファイアウォールの<strong>インバウンドポート(80/443)を一切開放する必要がありません</strong>。
+
                     社内サーバ上のコネクタ(cloudflared)がCloudflareへアウトバウンド接続を確立するため、外部からの攻撃対象領域(Attack Surface)を極小化できます。
+
                 </div>
+
+
 
                 <div class="card">
+
                     <h4>⚠️ Service Tokenによる認証 (採用)</h4>
+
                     <p>Cloudflare Accessのブラウザ認証画面を回避するため、発行したService Token (Client ID / Secret) をアプリ内に埋め込みます。</p>
+
                     <p><strong>許容リスク:</strong> トークン流出時や期限切れ（1年）の際は、アプリの強制アップデートが必要となりますが、50名規模のため運用対処可能と判断します。</p>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>🔧 技術スタック</h2>
+
                 <div class="tech-stack">
+
                     <div class="tech-item">
+
                         <h4>フロントエンド</h4>
+
                         <p>iOS: React Native<br>Android: Android Studio (Java)</p>
+
                     </div>
+
                     <div class="tech-item">
+
                         <h4>バックエンド</h4>
+
                         <p>Java 17+ / Spring Boot 3.x<br><strong>Job Queue (DB-backed / JobRunr等)</strong></p>
+
                     </div>
+
                     <div class="tech-item">
+
                         <h4>データベース</h4>
+
                         <p>PostgreSQL<br>(打刻・トークン・ジョブ管理)</p>
+
                     </div>
+
                     <div class="tech-item">
+
                         <h4>認証・ID管理</h4>
+
                         <p>Google OAuth 2.0<br>JWT / Service Token</p>
+
                     </div>
+
                     <div class="tech-item">
+
                         <h4>外部連携</h4>
+
                         <p>Slack API (OAuth v2)<br>freee API</p>
+
                     </div>
+
                     <div class="tech-item">
+
                         <h4>インフラ</h4>
+
                         <p>Linux Server (On-Prem)<br>Cloudflare Tunnel</p>
+
                     </div>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>🔐 ログイン・外部API認証フロー</h2>
+
                 <p>ユーザーがGoogleアカウントで自社アプリにログインし、その後Slack/freeeとの連携許可を行うまでの流れです。</p>
 
+
+
                 <div class="diagram-container">
+
                     <div class="mermaid">
+
                         sequenceDiagram
+
                         autonumber
+
                         participant User as 👤 ユーザー
+
                         participant App as 📱 アプリ
+
                         participant Server as 🖥️ 自社サーバ
+
                         participant Google as 🌐 Google Auth
+
                         participant ExtAPI as ☁️ Slack/freee
+
                         Note right of App: 【Step 1】自社ログイン (Google SSO)
+
                         User->>App: 「Googleでログイン」タップ
+
                         App->>Google: 認証リクエスト (Webview)
+
                         Google->>User: ログイン画面表示
+
                         User->>Google: ID/Pass入力・許可
+
                         Google-->>App: Authorization Code返却
+
                         App->>Server: Code送信 (API: /api/auth/google)
+
                         Server->>Google: Code検証・Token取得
+
                         Google-->>Server: User Profile (Email, ID)
+
                         Server->>Server: ユーザー登録or特定 (DB)
+
                         Server-->>App: 自社JWT返却 (ログイン完了)
+
                         Note right of App: 【Step 2】外部連携設定 (初回のみ)
+
                         User->>App: 「Slack/freeeと連携」タップ
+
                         App->>Server: 連携URL要求 (API: /api/slack/connect)
+
                         Server-->>App: Redirect URL返却
+
                         App->>ExtAPI: 認可リクエスト (Webview)
+
                         ExtAPI->>User: 許可画面表示
+
                         User->>ExtAPI: 「許可する」タップ
+
                         ExtAPI-->>Server: Callback (Code付き)
+
                         Server->>ExtAPI: Access/Refresh Token取得
+
                         Server->>Server: トークン暗号化してDB保存
+
                         Server-->>App: 連携完了通知 (Push or Polling)
+
                     </div>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>⚙️ 外部APIトークン自動更新フロー (Server-Side)</h2>
+
                 <p>Slackやfreeeのアクセストークン期限切れ時、サーバーが自律的にリフレッシュトークンを使って更新するフローです。<br>
+
                     <strong>※スマホアプリ側はこの処理に関与せず、トークン更新を意識する必要はありません。</strong>
+
                 </p>
 
+
+
                 <div class="diagram-container">
+
                     <div class="mermaid">
+
                         sequenceDiagram
+
                         autonumber
+
                         participant App as 📱 アプリ
+
                         participant Server as 🖥️ 自社サーバ
+
                         participant DB as 🗄️ DB
+
                         participant ExtAPI as ☁️ Slack/freee
 
+
+
                         Note right of App: アプリは単に打刻APIを叩くだけ
+
                         App->>Server: 打刻リクエスト
 
+
+
                         rect rgb(240, 248, 255)
+
                         Note right of Server: バックグラウンド処理中
+
                         Server->>DB: トークン取得 (復号化)
+
                         Server->>ExtAPI: APIリクエスト (Access Token)
 
+
+
                         alt トークン有効
+
                         ExtAPI-->>Server: 200 OK (成功)
+
                         else トークン期限切れ (401 Unauthorized)
+
                         ExtAPI-->>Server: 401 Error
+
                         Note right of Server: リフレッシュ処理開始
+
                         Server->>ExtAPI: 更新リクエスト (Refresh Token)
+
                         ExtAPI-->>Server: 新Access/Refresh Token返却
+
                         Server->>DB: 新トークン保存 (暗号化)
+
                         Server->>ExtAPI: APIリクエスト再試行 (Retry)
+
                         ExtAPI-->>Server: 200 OK (成功)
+
                         end
+
                         end
+
                     </div>
+
                 </div>
+
+
 
                 <div class="note">
+
                     <strong>📱 アプリチームへの伝達事項:</strong><br>
+
                     外部サービス（Slack/freee）の認証は「初回連携時」のみユーザー操作が必要です。<br>
+
                     それ以降のトークン維持・更新はすべてサーバー側のバックグラウンド処理で行われるため、<strong>アプリ側で外部サービスの再ログインやトークン更新を実装する必要はありません。</strong>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>🔄 JWTアクセストークン再取得フロー</h2>
+
                 <p>アプリが保持するJWT（アクセストークン）の有効期限が切れた際、バックグラウンドでリフレッシュトークンを使用して新しいJWTを取得するフローです。</p>
 
+
+
                 <div class="diagram-container">
+
                     <div class="mermaid">
+
                         sequenceDiagram
+
                         autonumber
+
                         participant App as 📱 アプリ
+
                         participant Server as 🖥️ 自社サーバ
+
                         participant DB as 🗄️ DB
 
+
+
                         Note right of App: APIリクエスト時
+
                         App->>Server: 1. APIリクエスト (JWT期限切れ)
+
                         Server-->>App: 401 Unauthorized
 
+
+
                         Note right of App: トークン更新処理 (Middleware)
+
                         App->>Server: 2. 更新リクエスト (API: /api/auth/refresh)
+
                         Note right of Server: Body: { refreshToken: "..." }
+
                         Server->>DB: リフレッシュトークン検証
+
                         alt 有効
+
                         Server-->>App: 200 OK (新しいJWT返却)
+
                         App->>App: 新JWTを保存 & リクエスト再送
+
                         else 無効/期限切れ
+
                         Server-->>App: 401 Unauthorized (再ログイン要求)
+
                         App->>App: ログアウト処理 (ログイン画面へ遷移)
+
                         end
+
                     </div>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>🔄 打刻処理フロー (非同期・信頼性重視)</h2>
+
                 <p>外部API連携（Slack/freee）を非同期化し、一時的なネットワーク障害があっても自動回復する仕組みです。</p>
 
+
+
                 <div class="diagram-container">
+
                     <div class="mermaid">
+
                         sequenceDiagram
+
                         autonumber
+
                         participant App as 📱 アプリ
+
                         participant Server as 🖥️ 自社サーバ
+
                         participant DB as 🗄️ DB (Table)
+
                         participant Ext as ☁️ 外部API
+
                         Note right of App: Service Token付与
+
                         App->>Server: 打刻リクエスト
+
                         rect rgb(240, 248, 255)
+
                         Note right of Server: 手動時刻指定がある場合は採用<br>ない場合はServer Timeを採用
+
                         Server->>DB: 1. 打刻データ保存 (Status: Pending)
+
                         Server->>DB: 2. ジョブテーブルへ登録 (Transactional)
+
                         end
+
                         Server-->>App: 202 Accepted (受付完了)
+
                         par バックグラウンド処理 (Worker)
+
                         loop リトライ処理 (最大3回 / 指数バックオフ)
+
                         Server->>DB: ジョブ取得 (Polling/Lock)
+
                         Server->>Server: Slackメッセージ内容の決定 (ロジック参照)
+
                         Server->>Ext: APIコール (freee/Slack)
+
                         alt 成功
+
                         Ext-->>Server: OK
+
                         Server->>DB: Job完了 / Status: Success
+
                         else 失敗/Timeout
+
                         Server->>DB: リトライ日時設定
+
                         Note right of DB: 最終失敗時は管理者通知ステータスへ
+
                         end
+
                         end
+
                         end
+
                     </div>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>☁️ 外部API連携詳細仕様 (Server-Side)</h2>
+
                 <p>自社サーバー（Spring Boot）から実行する外部APIリクエストの詳細です。</p>
 
+
+
                 <div class="card">
+
                     <h4>💬 1. Slack API 連携フロー</h4>
+
                     <p><strong>Endpoint:</strong> <code>https://slack.com/api/chat.postMessage</code> (POST)</p>
+
                     <div class="diagram-container">
+
                         <div class="mermaid">
+
                             graph TD
-                            Start[処理開始] --> FetchToken[DBからSlackトークン取得]
-                            FetchToken --> Decrypt[トークン復号化]
-                            Decrypt --> PostAPI[API送信<br>chat.postMessage]
-                            PostAPI --> CheckResult{結果確認}
 
-                            CheckResult -- "ok: true" --> End[成功終了]
+                            Start["処理開始"] --> FetchToken["DBからSlackトークン取得"]
 
-                            CheckResult -- "error: token_expired" --> Refresh[トークン更新処理]
-                            Refresh --> Retry[API再送信]
+                            FetchToken --> Decrypt["トークン復号化"]
+
+                            Decrypt --> PostAPI["API送信<br>chat.postMessage"]
+
+                            PostAPI --> CheckResult{"結果確認"}
+
+                            CheckResult -- "ok: true" --> End["成功終了"]
+
+                            CheckResult -- "error: token_expired" --> Refresh["トークン更新処理"]
+
+                            Refresh --> Retry["API再送信"]
+
                             Retry --> CheckResult
 
-                            CheckResult -- "その他エラー" --> Error[エラーログ記録<br>リトライキューへ]
+                            CheckResult -- "その他エラー" --> Error["エラーログ記録<br>リトライキューへ"]
+
                         </div>
+
                     </div>
+
                     <div class="table-responsive">
+
                         <table>
+
                             <thead>
+
                                 <tr>
+
                                     <th>Body Parameter</th>
+
                                     <th>値の生成ロジック</th>
+
                                 </tr>
+
                             </thead>
+
                             <tbody>
+
                                 <tr>
+
                                     <td><code>channel</code></td>
+
                                     <td><code>#timesheets</code> (または対応するChannel ID)</td>
+
                                 </tr>
+
                                 <tr>
+
                                     <td><code>text</code></td>
+
                                     <td>
+
                                         サーバー側で生成したメッセージ<br>
+
                                         例: <code>"おはようございます 10:00"</code>
+
                                     </td>
+
                                 </tr>
+
                                 <tr>
+
                                     <td><code>as_user</code></td>
+
                                     <td><code>true</code> (重要: ユーザー本人として投稿)</td>
+
                                 </tr>
+
                             </tbody>
+
                         </table>
+
                     </div>
+
                 </div>
 
-                <div class="card">
-                    <h4>📊 2. freee API 連携フロー</h4>
-                    <p><strong>Endpoint:</strong> <code>https://api.freee.co.jp/hr/api/v1/employees/{emp_id}/time_clocks</code> (POST)</p>
-                    <div class="diagram-container">
-                        <div class="mermaid">
-                            graph TD
-                            Start[処理開始] --> FetchToken[DBからfreeeトークン取得]
-                            FetchToken --> Decrypt[トークン復号化]
 
-                            Decrypt --> CheckCache{従業員ID<br>キャッシュあり?}
-                            CheckCache -- No --> GetEmp[従業員取得API<br>/api/v1/users/me]
-                            GetEmp --> SaveCache[従業員ID保存]
-                            CheckCache -- Yes --> PostAPI[打刻API送信<br>/time_clocks]
+
+                <div class="card">
+
+                    <h4>📊 2. freee API 連携フロー</h4>
+
+                    <p><strong>Endpoint:</strong> <code>https://api.freee.co.jp/hr/api/v1/employees/{emp_id}/time_clocks</code> (POST)</p>
+
+                    <div class="diagram-container">
+
+                        <div class="mermaid">
+
+                            graph TD
+
+                            Start["処理開始"] --> FetchToken["DBからfreeeトークン取得"]
+
+                            FetchToken --> Decrypt["トークン復号化"]
+
+                            Decrypt --> CheckCache{"従業員ID<br>キャッシュあり?"}
+
+                            CheckCache -- "No" --> GetEmp["従業員取得API<br>/api/v1/users/me"]
+
+                            GetEmp --> SaveCache["従業員ID保存"]
+
+                            CheckCache -- "Yes" --> PostAPI["打刻API送信<br>/time_clocks"]
+
                             SaveCache --> PostAPI
 
-                            PostAPI --> CheckResult{HTTP Status}
-                            CheckResult -- 201 Created --> End[成功終了]
+                            PostAPI --> CheckResult{"HTTP Status"}
 
-                            CheckResult -- 401 Unauthorized --> Refresh[トークン更新処理]
-                            Refresh --> Retry[API再送信]
+                            CheckResult -- "201 Created" --> End["成功終了"]
+
+                            CheckResult -- "401 Unauthorized" --> Refresh["トークン更新処理"]
+
+                            Refresh --> Retry["API再送信"]
+
                             Retry --> CheckResult
 
-                            CheckResult -- その他 --> Error[エラーログ記録<br>リトライキューへ]
+                            CheckResult -- "その他" --> Error["エラーログ記録<br>リトライキューへ"]
+
                         </div>
+
                     </div>
+
                     <div class="table-responsive">
+
                         <table>
+
                             <thead>
+
                                 <tr>
+
                                     <th>Body Parameter</th>
+
                                     <th>値の生成ロジック</th>
+
                                 </tr>
+
                             </thead>
+
                             <tbody>
+
                                 <tr>
+
                                     <td><code>company_id</code></td>
+
                                     <td>設定ファイル/環境変数から取得した事業所ID</td>
+
                                 </tr>
+
                                 <tr>
+
                                     <td><code>type</code></td>
+
                                     <td>
+
                                         出勤時: <code>clock_in</code><br>
+
                                         退勤時: <code>clock_out</code>
+
                                     </td>
+
                                 </tr>
+
                                 <tr>
+
                                     <td><code>datetime</code></td>
+
                                     <td>
+
                                         打刻時刻 (yyyy-MM-dd HH:mm:ss)<br>
+
                                         ※手動指定がある場合はその時刻、なければサーバー現在時刻
+
                                     </td>
+
                                 </tr>
+
                             </tbody>
+
                         </table>
+
                     </div>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>💬 Slack通知メッセージ仕様 (サーバー側ロジック)</h2>
+
                 <p>アプリからは単純な「打刻」リクエストのみを送信し、Slackへ投稿するメッセージ内容は、サーバー側のビジネスロジックで決定します。</p>
 
+
+
                 <div class="card">
+
                     <h4>📮 送信先チャンネル</h4>
+
                     <p><strong>#timesheets</strong> (固定)</p>
+
                 </div>
+
+
 
                 <div class="table-responsive">
+
                     <h4>📝 メッセージ生成ルール</h4>
+
                     <table>
+
                         <thead>
+
                             <tr>
+
                                 <th>打刻種別</th>
+
                                 <th>時刻指定</th>
+
                                 <th>フォーマット</th>
+
                                 <th>送信メッセージ例</th>
+
                             </tr>
+
                         </thead>
+
                         <tbody>
+
                             <tr>
+
                                 <td><strong>出勤</strong></td>
+
                                 <td>通常 (現在時刻)</td>
+
                                 <td>定型文</td>
+
                                 <td><code>おはようございます</code></td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>出勤</strong></td>
+
                                 <td>手動変更あり</td>
+
                                 <td>定型文 + [HH:mm]</td>
+
                                 <td><code>おはようございます 10:00</code></td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>退勤</strong></td>
+
                                 <td>通常 (現在時刻)</td>
+
                                 <td>定型文</td>
+
                                 <td><code>お疲れ様です</code></td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>退勤</strong></td>
+
                                 <td>手動変更あり</td>
+
                                 <td>定型文 + [HH:mm]</td>
+
                                 <td><code>お疲れ様です 19:00</code></td>
+
                             </tr>
+
                         </tbody>
+
                     </table>
+
                 </div>
 
+
+
                 <div class="card">
+
                     <h4>🔧 実装イメージ (Java Pseudo Code)</h4>
-                    <div class="code-block">
-                        public String generateSlackMessage(AttendanceLog log) {
+
+                    <div class="code-block">public String generateSlackMessage(AttendanceLog log) {
                         StringBuilder sb = new StringBuilder();
 
                         // 1. 基本挨拶
@@ -885,19 +1937,27 @@
                         }
 
                         return sb.toString();
-                        }
-                    </div>
+                        }</div>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>🔑 トークン管理・排他制御</h2>
 
+
+
                 <div class="card">
+
                     <h4>🔄 トークン更新の排他制御 (Race Condition対策)</h4>
+
                     <p>アプリからの並列リクエストにより、リフレッシュトークンが同時に使用されて無効化されるのを防ぐため、バックエンド側でロック制御を実装します。</p>
-                    <div class="code-block">
-                        // Java (Spring Boot) Pseudo Code
+
+                    <div class="code-block">// Java (Spring Boot) Pseudo Code
                         public synchronized Token refreshAccessToken(String userId) {
                         // 1. DBから最新トークンを再取得 (Double Check)
                         Token current = db.findToken(userId);
@@ -909,78 +1969,145 @@
 
                         // 3. 実際にRefresh APIを叩く
                         return executeRefreshLogic(current);
-                        }
-                    </div>
+                        }</div>
+
                 </div>
+
+
 
                 <div class="table-responsive">
+
                     <table>
+
                         <thead>
+
                             <tr>
+
                                 <th>トークン種別</th>
+
                                 <th>保存場所</th>
+
                                 <th>暗号化</th>
+
                                 <th>有効期限</th>
+
                                 <th>更新ロジック</th>
+
                             </tr>
+
                         </thead>
+
                         <tbody>
+
                             <tr>
+
                                 <td><strong>CF Service Token</strong></td>
+
                                 <td>アプリ内</td>
+
                                 <td>-</td>
+
                                 <td>1年</td>
+
                                 <td>アプリ更新時に手動差替え</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>JWT (自社)</strong></td>
+
                                 <td>アプリ(Secure)</td>
+
                                 <td>署名</td>
+
                                 <td>24時間</td>
+
                                 <td>リフレッシュトークンで更新</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>External Access Token</strong></td>
+
                                 <td>DB (別テーブル)</td>
+
                                 <td>AES-256</td>
+
                                 <td>数時間</td>
+
                                 <td>期限切れ時に<strong>ロック付き自動更新</strong></td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>External Refresh Token</strong></td>
+
                                 <td>DB (別テーブル)</td>
+
                                 <td>AES-256</td>
+
                                 <td>永続/有限</td>
+
                                 <td>アクセストークン更新時に更新(Rotation)</td>
+
                             </tr>
+
                         </tbody>
+
                     </table>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>🛡️ セキュリティ配慮方針</h2>
 
+
+
                 <div class="security-list">
+
                     <h3>✅ 重点対策項目</h3>
+
                     <ul>
+
                         <li><strong>時刻の真正性担保:</strong> ユーザーが時刻を手動変更した場合は、DBに「手動フラグ」と「監査用システム時刻(created_at)」を記録し、不正改ざんと正規修正を区別します。</li>
+
                         <li><strong>二重打刻防止:</strong> 冪等性キー（Request ID）と、直近1分以内の同一アクション禁止ロジックで重複を排除します。</li>
+
                         <li><strong>Cloudflare Tunnel:</strong> ポート開放不要のゼロトラスト接続により、インバウンド攻撃を無効化します。</li>
+
                         <li><strong>Service Token認証:</strong> Cloudflare Accessポリシーで許可されたトークンを持つリクエストのみを通します。</li>
+
                         <li><strong>DB暗号化:</strong> 外部サービスの連携トークンはすべてAES-256で暗号化して保存します。</li>
+
                     </ul>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>📡 REST API設計詳細</h2>
+
                 <p>非同期処理化に伴いレスポンスを202に変更。<strong>手動時刻指定（打刻忘れ対応）</strong>用のフィールドを追加しました。</p>
 
+
+
                 <h3>📝 出勤打刻 (Clock-In)</h3>
+
                 <p><strong>Endpoint:</strong> <code>POST /api/attendance/clock-in</code></p>
-                <div class="code-block">
-                    // Headers
+
+                <div class="code-block">// Headers
                     Authorization: Bearer &lt;JWT_TOKEN&gt;
                     X-Request-ID: "uuid-v4" // 冪等性担保用
                     CF-Access-Client-Id: "..." // Service Token
@@ -1004,433 +2131,842 @@
                     "is_manual": true,
                     "log_id": 12345
                     }
-                    }
-                </div>
+                    }</div>
+
             </section>
 
+
+
             <section>
+
                 <h2>📱 スマホアプリ画面仕様 & UIイメージ</h2>
+
                 <p>シンプルな操作性を維持しつつ、手動時刻指定などの例外対応も考慮したUI設計です。</p>
 
+
+
                 <h3>1. 画面遷移図</h3>
+
                 <div class="diagram-container">
+
                     <div class="mermaid">
+
                         graph LR
-                        Splash[起動画面] --> CheckAuth{ログイン状態}
-                        CheckAuth -- 未ログイン --> Login[ログイン画面]
-                        CheckAuth -- ログイン済 --> Main[メイン画面]
 
-                        Login --> |Google認証| Main
+                        Splash["起動画面"] --> CheckAuth{"ログイン状態"}
 
-                        Main --> |出勤/退勤ボタン| Loading[処理中]
-                        Loading --> Success[完了ダイアログ]
+                        CheckAuth -- "未ログイン" --> Login["ログイン画面"]
 
-                        Main --> |日時を変更して打刻| ManualModal[手動打刻モーダル]
-                        ManualModal --> |確定| Loading
+                        CheckAuth -- "ログイン済" --> Main["メイン画面"]
 
-                        Main --> |設定アイコン| Settings[連携設定画面]
+                        Login --> |"Google認証"| Main
+
+                        Main --> |"出勤/退勤ボタン"| Loading["処理中"]
+
+                        Loading --> Success["完了ダイアログ"]
+
+                        Main --> |"日時を変更して打刻"| ManualModal["手動打刻モーダル"]
+
+                        ManualModal --> |"確定"| Loading
+
+                        Main --> |"設定アイコン"| Settings["連携設定画面"]
+
                     </div>
+
                 </div>
+
+
 
                 <h3>2. 主要画面モックアップ</h3>
+
                 <div class="mockup-container">
-                    <div class="smartphone">
-                        <div class="smartphone-header">ログイン</div>
-                        <div class="smartphone-body">
-                            <h2 style="color: #333; margin-bottom: 30px;">勤怠アプリ</h2>
-                            <button class="ui-login-btn">
-                                <span style="font-size: 1.2em;">G</span> Googleでログイン
-                            </button>
-                        </div>
-                    </div>
 
                     <div class="smartphone">
-                        <div class="smartphone-header">メイン</div>
+
+                        <div class="smartphone-header">ログイン</div>
+
                         <div class="smartphone-body">
+
+                            <h2 style="color: #333; margin-bottom: 30px;">勤怠アプリ</h2>
+
+                            <button class="ui-login-btn">
+
+                                <span style="font-size: 1.2em;">G</span> Googleでログイン
+
+                            </button>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="smartphone">
+
+                        <div class="smartphone-header">メイン</div>
+
+                        <div class="smartphone-body">
+
                             <div style="position: absolute; top: 10px; right: 10px;">⚙️</div>
+
                             <div style="text-align: center;">
+
                                 <p style="margin:0; color:#666;">2026/02/10 (火)</p>
+
                                 <div class="ui-time">08:55</div>
+
                             </div>
+
+
 
                             <button class="ui-btn in">
+
                                 <span>出勤</span>
+
                                 <small style="font-size:0.5em; font-weight:normal;">Clock In</small>
+
                             </button>
 
+
+
                             <div class="ui-link">日時を指定して打刻</div>
+
                         </div>
+
                     </div>
+
+
 
                     <div class="smartphone">
+
                         <div class="smartphone-header">メイン (モーダル表示)</div>
+
                         <div class="smartphone-body" style="background: rgba(0,0,0,0.5);">
+
                             <div class="ui-modal">
+
                                 <h4 style="margin-bottom: 15px; color:#1e40af;">日時指定出勤</h4>
 
+
+
                                 <div class="ui-input-group">
+
                                     <label class="ui-label">日付</label>
+
                                     <input type="date" class="ui-input" value="2026-02-10">
+
                                 </div>
+
                                 <div class="ui-input-group">
+
                                     <label class="ui-label">時刻</label>
+
                                     <input type="time" class="ui-input" value="09:00">
+
                                 </div>
+
                                 <div class="ui-input-group">
+
                                     <label class="ui-label">メモ (任意)</label>
+
                                     <input type="text" class="ui-input" placeholder="例: 電車遅延">
+
                                 </div>
+
+
 
                                 <button class="ui-btn-submit">この日時で打刻</button>
+
                             </div>
+
                         </div>
+
                     </div>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>📱 スマホアプリチーム実装要件まとめ</h2>
+
                 <p>Spring Bootチーム（バックエンド）と連携するために、アプリ開発者が実装すべき具体的な項目です。</p>
 
+
+
                 <div class="card">
+
                     <h4>✅ 1. 共通: HTTPクライアント設定 (Middleware)</h4>
+
                     <p>すべてのAPIリクエストに対し、インターセプターで以下のヘッダーを付与するロジックを実装してください。</p>
+
                     <div class="table-responsive">
+
                         <table>
+
                             <thead>
+
                                 <tr>
+
                                     <th>Header</th>
+
                                     <th>Valueの生成元</th>
+
                                     <th>ライブラリ例 (JS/TS)</th>
+
                                 </tr>
+
                             </thead>
+
                             <tbody>
+
                                 <tr>
+
                                     <td><code>Authorization</code></td>
+
                                     <td><code>Bearer + [JWT]</code></td>
+
                                     <td>AsyncStorage / SecureStore</td>
+
                                 </tr>
+
                                 <tr>
+
                                     <td><code>X-Request-ID</code></td>
+
                                     <td>UUID v4 (リクエスト毎に生成)</td>
+
                                     <td><code>uuid</code> npm package</td>
+
                                 </tr>
+
                                 <tr>
+
                                     <td><code>CF-Access-Client-Id</code></td>
+
                                     <td>アプリ内定数 (Config)</td>
+
                                     <td><code>react-native-config</code></td>
+
                                 </tr>
+
                             </tbody>
+
                         </table>
+
                     </div>
-                    <div class="code-block">
-                        // Axios Interceptor Example
+
+                    <div class="code-block">// Axios Interceptor Example
                         axiosInstance.interceptors.request.use(async (config) => {
                         const token = await SecureStore.getItemAsync('user_jwt');
                         config.headers.Authorization = `Bearer ${token}`;
                         config.headers['X-Request-ID'] = uuidv4();
                         return config;
-                        });
-                    </div>
+                        });</div>
+
                 </div>
 
+
+
                 <div class="card">
+
                     <h4>✅ 2. 認証トークンの管理ロジック</h4>
+
                     <p><strong>重要:</strong> アプリ側は「自社のJWT」のみを管理します。Slack/freeeのトークン管理はサーバー側の責任であり、アプリ側は一切関与しません。</p>
+
                     <ul>
+
                         <li><strong>保存場所:</strong> <code>SecureStore</code> (Expo/React Native) などのOS標準暗号化領域。</li>
+
                         <li><strong>自動更新:</strong> APIが <code>401 Unauthorized</code> を返した際、自動的に <code>/api/auth/refresh</code> を叩いてJWTを更新し、元のリクエストを再試行する仕組み（Axios Interceptor等）を実装してください。</li>
+
                     </ul>
+
                 </div>
 
+
+
                 <div class="card">
+
                     <h4>✅ 3. 画面ごとの実装タスク</h4>
+
                     <div class="table-responsive">
+
                         <table>
+
                             <thead>
+
                                 <tr>
+
                                     <th>画面</th>
+
                                     <th>実装タスク</th>
+
                                 </tr>
+
                             </thead>
+
                             <tbody>
+
                                 <tr>
+
                                     <td><strong>ログイン画面</strong></td>
+
                                     <td>
+
                                         ・Google OAuth 2.0のWebview実装<br>
+
                                         ・認証コードをバックエンドへ送信 (<code>POST /api/auth/google</code>)<br>
+
                                         ・返却されたJWTをSecure Storageへ保存
+
                                     </td>
+
                                 </tr>
+
                                 <tr>
+
                                     <td><strong>メイン画面</strong></td>
+
                                     <td>
+
                                         ・現在時刻の1秒更新ロジック<br>
+
                                         ・起動時に「今日の打刻状態」を取得し、ボタン（出勤or退勤）を出し分け<br>
+
                                         ・打刻ボタン押下時のAPI送信 (<code>manual_timestamp: null</code>)
+
                                     </td>
+
                                 </tr>
+
                                 <tr>
+
                                     <td><strong>手動打刻モーダル</strong></td>
+
                                     <td>
+
                                         ・DatePicker/TimePickerの実装<br>
+
                                         ・選択された日時をISO8601形式等でAPI送信 (<code>manual_timestamp: "..."</code>)
+
                                     </td>
+
                                 </tr>
+
                             </tbody>
+
                         </table>
+
                     </div>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>💾 データベース設計 (正規化対応)</h2>
+
                 <p>拡張性を考慮し、連携トークンを別テーブルに切り出す設計（縦持ち）に変更しました。</p>
 
+
+
                 <h3>1. users テーブル (従業員マスタ)</h3>
+
                 <div class="table-responsive">
+
                     <table>
+
                         <thead>
+
                             <tr>
+
                                 <th>物理名</th>
+
                                 <th>型</th>
+
                                 <th>制約</th>
+
                                 <th>説明</th>
+
                             </tr>
+
                         </thead>
+
                         <tbody>
+
                             <tr>
+
                                 <td><code>user_id</code></td>
+
                                 <td>UUID</td>
+
                                 <td>PK</td>
+
                                 <td>システム内部ID</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>google_id</code></td>
+
                                 <td>VARCHAR</td>
+
                                 <td>UNIQUE</td>
+
                                 <td>SSO用ID</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>email</code></td>
+
                                 <td>VARCHAR</td>
+
                                 <td>UNIQUE</td>
+
                                 <td>メールアドレス</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>name</code></td>
+
                                 <td>VARCHAR</td>
+
                                 <td></td>
+
                                 <td>表示名</td>
+
                             </tr>
+
                         </tbody>
+
                     </table>
+
                 </div>
+
+
 
                 <h3>2. user_integrations テーブル <span class="badge badge-new">New</span></h3>
+
                 <p>将来的なツール追加（LINE WORKS等）に柔軟に対応できる設計です。</p>
+
                 <div class="table-responsive">
+
                     <table>
+
                         <thead>
+
                             <tr>
+
                                 <th>物理名</th>
+
                                 <th>型</th>
+
                                 <th>説明</th>
+
                             </tr>
+
                         </thead>
+
                         <tbody>
+
                             <tr>
+
                                 <td><code>id</code></td>
+
                                 <td>BIGSERIAL</td>
+
                                 <td>PK</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>user_id</code></td>
+
                                 <td>UUID</td>
+
                                 <td>FK (users)</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>provider</code></td>
+
                                 <td>VARCHAR(20)</td>
+
                                 <td>'slack', 'freee' 等</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>access_token</code></td>
+
                                 <td>TEXT</td>
+
                                 <td><strong>AES-256暗号化</strong></td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>refresh_token</code></td>
+
                                 <td>TEXT</td>
+
                                 <td><strong>AES-256暗号化</strong></td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>expires_at</code></td>
+
                                 <td>TIMESTAMP</td>
+
                                 <td>有効期限</td>
+
                             </tr>
+
                         </tbody>
+
                     </table>
+
                 </div>
+
+
 
                 <h3>3. attendance_logs テーブル (打刻履歴)</h3>
+
                 <div class="table-responsive">
+
                     <table>
+
                         <thead>
+
                             <tr>
+
                                 <th>物理名</th>
+
                                 <th>型</th>
+
                                 <th>説明</th>
+
                             </tr>
+
                         </thead>
+
                         <tbody>
+
                             <tr>
+
                                 <td><code>log_id</code></td>
+
                                 <td>BIGSERIAL</td>
+
                                 <td>PK</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>user_id</code></td>
+
                                 <td>UUID</td>
+
                                 <td>FK</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>request_id</code></td>
+
                                 <td>VARCHAR</td>
+
                                 <td><strong>冪等性キー (Unique)</strong></td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>stamped_at</code></td>
+
                                 <td>TIMESTAMP</td>
+
                                 <td><strong>適用される打刻時刻</strong> (手動指定 または サーバー時刻)</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>created_at</code></td>
+
                                 <td>TIMESTAMP</td>
+
                                 <td><strong>監査用システム時刻</strong> (レコード作成日時)</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>is_manual</code></td>
+
                                 <td>BOOLEAN</td>
+
                                 <td>手動変更フラグ (True:手動 / False:自動)</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>sync_status</code></td>
+
                                 <td>VARCHAR</td>
+
                                 <td>'pending', 'synced', 'failed'</td>
+
                             </tr>
+
                         </tbody>
+
                     </table>
+
                 </div>
+
+
 
                 <h3>4. job_queue テーブル <span class="badge badge-new">New</span></h3>
+
                 <p>外部API連携のリトライ制御を管理するテーブルです。</p>
+
                 <div class="table-responsive">
+
                     <table>
+
                         <thead>
+
                             <tr>
+
                                 <th>物理名</th>
+
                                 <th>型</th>
+
                                 <th>説明</th>
+
                             </tr>
+
                         </thead>
+
                         <tbody>
+
                             <tr>
+
                                 <td><code>job_id</code></td>
+
                                 <td>UUID</td>
+
                                 <td>PK</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>job_type</code></td>
+
                                 <td>VARCHAR(50)</td>
+
                                 <td>'sync_to_freee' 等</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>payload</code></td>
+
                                 <td>JSONB</td>
+
                                 <td>連携に必要なデータ</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>status</code></td>
+
                                 <td>VARCHAR(20)</td>
+
                                 <td>'PENDING', 'PROCESSING', 'DONE', 'FAILED'</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>retry_count</code></td>
+
                                 <td>INT</td>
+
                                 <td>リトライ回数</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><code>next_run_at</code></td>
+
                                 <td>TIMESTAMP</td>
+
                                 <td>次回実行予定日時</td>
+
                             </tr>
+
                         </tbody>
+
                     </table>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>📅 開発フェーズ案</h2>
+
                 <div class="table-responsive">
+
                     <table>
+
                         <thead>
+
                             <tr>
+
                                 <th>フェーズ</th>
+
                                 <th>主な作業内容</th>
+
                                 <th>期間目安</th>
+
                             </tr>
+
                         </thead>
+
                         <tbody>
+
                             <tr>
+
                                 <td><strong>Phase 0</strong></td>
+
                                 <td>Cloudflare Tunnel設定、DB構築(user_integrations, job_queue含む)</td>
+
                                 <td>3日</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>Phase 1</strong></td>
+
                                 <td>認証基盤、排他制御ロジック実装</td>
+
                                 <td>1週間</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>Phase 2</strong></td>
+
                                 <td>Slack/freee連携、<strong>DBジョブキュー実装</strong></td>
+
                                 <td>2週間</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>Phase 3</strong></td>
+
                                 <td>アプリ開発 (ServiceToken埋め込み、<strong>時刻指定UI</strong>)</td>
+
                                 <td>3週間</td>
+
                             </tr>
+
                             <tr>
+
                                 <td><strong>Phase 4</strong></td>
+
                                 <td>テスト (リトライ試験、オフライン試験)</td>
+
                                 <td>1週間</td>
+
                             </tr>
+
                         </tbody>
+
                     </table>
+
                 </div>
+
             </section>
 
+
+
             <section>
+
                 <h2>✅ まとめ</h2>
+
                 <div class="benefit-box">
+
                     <h3 style="color: #065f46; margin-bottom: 15px;">v3.4 最終設計のポイント</h3>
+
                     <ul>
+
                         <li><strong>アプリ実装の明確化:</strong> スマホアプリチームが実装すべき「ヘッダー処理」「トークン管理」「画面仕様」を具体的にリスト化しました。</li>
+
                         <li><strong>画面仕様の具体化:</strong> 手動打刻モーダルやログイン画面のイメージを明確化し、アプリ開発の指針を確立。</li>
+
                         <li><strong>API仕様の明確化:</strong> Slack/freeeへの接続パラメータとメッセージロジックを具体化。</li>
+
                         <li><strong>自律的なトークン管理:</strong> 外部APIのトークン更新はサーバーが自動で行うため、アプリ側の負担がゼロ。</li>
+
                         <li><strong>堅牢性と柔軟性の両立:</strong> セキュアな通信経路と、現場の運用に即した手動時刻変更機能。</li>
+
                     </ul>
+
                 </div>
+
             </section>
+
         </div>
 
+
+
         <footer>
+
             <p>業務用勤怠打刻システム 設計資料 v3.4</p>
+
             <p style="font-size: 0.9em; margin-top: 5px;">作成日: 2026年2月12日</p>
+
         </footer>
+
     </div>
+
 </body>
+
 </html>
