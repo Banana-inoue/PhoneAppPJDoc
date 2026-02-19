@@ -1130,9 +1130,9 @@
 
             <section>
 
-                <h2>🏗️ システム全体構成図 (Zero Trust + DB Job Queue)</h2>
+                <h2>🏗️ システム全体構成図 (Zero Trust + Docker + DB Job Queue)</h2>
 
-                <p>Cloudflare Tunnelによるセキュアな接続と、<strong>PostgreSQLを用いた堅牢なジョブ管理</strong>を組み合わせた構成です。</p>
+                <p>Cloudflare Tunnelによるセキュアな接続と、<strong>Dockerコンテナで管理されたアプリケーション・DB</strong>、<strong>PostgreSQLを用いた堅牢なジョブ管理</strong>を組み合わせた構成です。</p>
 
 
 
@@ -1164,13 +1164,13 @@
 
                         Firewall["🔥 Firewall<br>Inbound全拒否"]
 
-                        subgraph Server["アプリケーション"]
+                        subgraph Docker["🐳 Docker Compose"]
 
                         Spring["☕ Spring Boot App<br>Port: 8080"]
 
-                        end
-
                         DB[("🗄️ PostgreSQL<br>App Data + Job Queue")]
+
+                        end
 
                         end
 
@@ -1212,6 +1212,8 @@
 
                                         style DB fill:#fff7ed,stroke:#ea580c,stroke-width:2px
 
+                                        style Docker fill:#e0f2fe,stroke:#0284c7,stroke-width:2px
+
                     </div>
 
                 </div>
@@ -1225,6 +1227,16 @@
                     自社ファイアウォールの<strong>インバウンドポート(80/443)を一切開放する必要がありません</strong>。
 
                     社内サーバ上のコネクタ(cloudflared)がCloudflareへアウトバウンド接続を確立するため、外部からの攻撃対象領域(Attack Surface)を極小化できます。
+
+                </div>
+
+                <div class="note">
+
+                    <strong>🐳 Docker Composeの採用:</strong>
+
+                    Spring Boot アプリケーションとPostgreSQLをDockerコンテナとして管理します。
+                    <code>docker compose up -d</code> でサービス一式を起動でき、環境構築の再現性とデプロイの簡便性を確保します。
+                    cloudflaredはホスト側で動作し、コンテナ内のアプリケーション (localhost:8080) へリクエストを転送します。
 
                 </div>
 
@@ -1262,7 +1274,7 @@
 
                         <h4>バックエンド</h4>
 
-                        <p>Java 17+ / Spring Boot 3.x<br><strong>Job Queue (DB-backed / JobRunr等)</strong></p>
+                        <p>Java 17+ / Spring Boot 3.x<br><strong>Docker Compose</strong><br>Job Queue (DB-backed / JobRunr等)</p>
 
                     </div>
 
@@ -1294,7 +1306,7 @@
 
                         <h4>インフラ</h4>
 
-                        <p>Linux Server (On-Prem)<br>Cloudflare Tunnel</p>
+                        <p>Linux Server (On-Prem)<br>Docker Compose<br>Cloudflare Tunnel</p>
 
                     </div>
 
@@ -1714,7 +1726,8 @@
 
                     <h4>📊 2. freee API 連携フロー</h4>
 
-                    <p><strong>Endpoint:</strong> <code>https://api.freee.co.jp/hr/api/v1/employees/{emp_id}/time_clocks</code> (POST)</p>
+                    <p><strong>Endpoint (打刻):</strong> <code>POST /hr/api/v1/employees/{emp_id}/time_clocks</code></p>
+                    <p><strong>Endpoint (休暇):</strong> <code>PUT /hr/api/v1/employees/{emp_id}/work_records/{date}</code> <span class="badge new">New</span></p>
 
                     <div class="diagram-container">
 
@@ -1732,13 +1745,19 @@
 
                             GetEmp --> SaveCache["従業員ID保存"]
 
-                            CheckCache -- "Yes" --> PostAPI["打刻API送信<br>/time_clocks"]
+                            CheckCache -- "Yes" --> CheckType{"打刻種別?"}
 
-                            SaveCache --> PostAPI
+                            SaveCache --> CheckType
 
-                            PostAPI --> CheckResult{"HTTP Status"}
+                            CheckType -- "出勤 / 退勤" --> PostClock["打刻API送信<br>POST /time_clocks"]
 
-                            CheckResult -- "201 Created" --> End["成功終了"]
+                            CheckType -- "休み" --> PutRecord["勤怠更新API送信<br>PUT /work_records/date"]
+
+                            PostClock --> CheckResult{"HTTP Status"}
+
+                            PutRecord --> CheckResult
+
+                            CheckResult -- "200-201" --> End["成功終了"]
 
                             CheckResult -- "401 Unauthorized" --> Refresh["トークン更新処理"]
 
@@ -1760,6 +1779,8 @@
 
                                 <tr>
 
+                                    <th>API</th>
+
                                     <th>Body Parameter</th>
 
                                     <th>値の生成ロジック</th>
@@ -1771,6 +1792,8 @@
                             <tbody>
 
                                 <tr>
+
+                                    <td rowspan="3"><strong>打刻<br>(time_clocks)</strong></td>
 
                                     <td><code>company_id</code></td>
 
@@ -1806,10 +1829,53 @@
 
                                 </tr>
 
+                                <tr style="border-top: 3px solid #e5e7eb;">
+
+                                    <td rowspan="4"><strong>休暇<br>(work_records)</strong><br><span class="badge new">New</span></td>
+
+                                    <td><code>company_id</code></td>
+
+                                    <td>事業所ID</td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td><code>is_absence</code></td>
+
+                                    <td>
+
+                                        欠勤の場合: <code>true</code><br>
+
+                                        有給の場合: <code>false</code>
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td><code>paid_holiday</code></td>
+
+                                    <td>
+
+                                        有給全休: <code>1</code><br>
+
+                                        有給でない場合: <code>0</code>
+
+                                    </td>
+
+                                </tr>
+
                             </tbody>
 
                         </table>
 
+                    </div>
+
+                    <div class="note">
+                        <strong>📝 freee 休暇登録の注意点:</strong><br>
+                        休暇の登録は打刻API (<code>time_clocks</code>) ではなく、勤怠更新API (<code>work_records</code>) を使用します。プランによりAPI利用可否が異なるため、事前にご確認ください。
                     </div>
 
                 </div>
@@ -1908,6 +1974,18 @@
 
                             </tr>
 
+                            <tr style="border-top: 3px solid #e5e7eb;">
+
+                                <td><strong>休み</strong> <span class="badge new">New</span></td>
+
+                                <td>-</td>
+
+                                <td>定型文</td>
+
+                                <td><code>本日はお休みです</code></td>
+
+                            </tr>
+
                         </tbody>
 
                     </table>
@@ -1923,14 +2001,19 @@
                     <div class="code-block">public String generateSlackMessage(AttendanceLog log) {
                         StringBuilder sb = new StringBuilder();
 
-                        // 1. 基本挨拶
+                        // 1. 休み報告
+                        if (log.getActionType() == ActionType.DAY_OFF) {
+                        return "本日はお休みです";
+                        }
+
+                        // 2. 基本挨拶
                         if (log.getActionType() == ActionType.CLOCK_IN) {
                         sb.append("おはようございます");
                         } else {
                         sb.append("お疲れ様です");
                         }
 
-                        // 2. 手動修正時の時刻付与
+                        // 3. 手動修正時の時刻付与
                         if (log.isManual()) {
                         String timeStr = log.getStampedAt().format(DateTimeFormatter.ofPattern("HH:mm"));
                         sb.append(" ").append(timeStr);
@@ -2133,6 +2216,61 @@
                     }
                     }</div>
 
+                <h3>🏖️ 休み報告 (Day-Off) <span class="badge new">New</span></h3>
+
+                <p><strong>Endpoint:</strong> <code>POST /api/attendance/day-off</code></p>
+
+                <div class="code-block">// Headers (出勤打刻と同一)
+                    Authorization: Bearer &lt;JWT_TOKEN&gt;
+                    X-Request-ID: "uuid-v4"
+                    CF-Access-Client-Id: "..."
+
+                    // Body
+                    {
+                    "date": "2026-02-10",
+                    "leave_type": "paid_holiday", // "paid_holiday" | "absence"
+                    "note": "通院のため" // 任意
+                    }
+
+                    // Response (202 Accepted)
+                    {
+                    "status": "accepted",
+                    "message": "休み報告を受け付けました",
+                    "data": {
+                    "date": "2026-02-10",
+                    "leave_type": "paid_holiday",
+                    "leave_type_label": "有給休暇",
+                    "log_id": 12346
+                    }
+                    }</div>
+
+                <div class="table-responsive">
+                    <table>
+                        <thead>
+                            <tr>
+                                <th><code>leave_type</code> 値</th>
+                                <th>表示名</th>
+                                <th>freee連携先パラメータ</th>
+                                <th>Slackメッセージ</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td><code>paid_holiday</code></td>
+                                <td>有給休暇</td>
+                                <td><code>paid_holiday: 1</code></td>
+                                <td>本日はお休みです</td>
+                            </tr>
+                            <tr>
+                                <td><code>absence</code></td>
+                                <td>欠勤</td>
+                                <td><code>is_absence: true</code></td>
+                                <td>本日はお休みです</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+
             </section>
 
 
@@ -2168,6 +2306,10 @@
                         Main --> |"日時を変更して打刻"| ManualModal["手動打刻モーダル"]
 
                         ManualModal --> |"確定"| Loading
+
+                        Main --> |"休み報告"| DayOffModal["休み報告モーダル"]
+
+                        DayOffModal --> |"確定"| Loading
 
                         Main --> |"設定アイコン"| Settings["連携設定画面"]
 
@@ -2231,6 +2373,46 @@
 
                             <div class="ui-link">日時を指定して打刻</div>
 
+                            <div class="ui-link" style="margin-top: 8px; color: #6d28d9;">🏖️ 休み報告</div>
+
+                        </div>
+
+                    </div>
+
+
+
+                    <div class="smartphone">
+
+                        <div class="smartphone-header">休み報告モーダル <span class="badge new">New</span></div>
+
+                        <div class="smartphone-body" style="background: rgba(0,0,0,0.5);">
+
+                            <div class="ui-modal" style="height: 55%;">
+
+                                <h4 style="margin-bottom: 15px; color:#6d28d9;">🏖️ 休み報告</h4>
+
+                                <div class="ui-input-group">
+                                    <label class="ui-label">日付</label>
+                                    <input type="date" class="ui-input" value="2026-02-10">
+                                </div>
+
+                                <div class="ui-input-group">
+                                    <label class="ui-label">休暇種別</label>
+                                    <select class="ui-input">
+                                        <option selected>有給休暇</option>
+                                        <option>欠勤</option>
+                                    </select>
+                                </div>
+
+                                <div class="ui-input-group">
+                                    <label class="ui-label">メモ (任意)</label>
+                                    <input type="text" class="ui-input" placeholder="例: 通院のため">
+                                </div>
+
+                                <button class="ui-btn-submit" style="background: #6d28d9;">休みを報告する</button>
+
+                            </div>
+
                         </div>
 
                     </div>
@@ -2277,6 +2459,75 @@
 
                                 <button class="ui-btn-submit">この日時で打刻</button>
 
+                            </div>
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+                <h3>3. 外部サービス連携 (Slack / freee)</h3>
+
+                <div class="note">
+                    <strong>📱 初回連携について:</strong><br>
+                    外部サービス（Slack / freee）の認証は<strong>「初回連携時」のみユーザー操作が必要</strong>です。
+                    設定画面から各サービスの「連携する」ボタンをタップすると、OAuth認可画面（Webview）が表示されます。
+                    一度連携が完了すれば、以降のトークン維持・更新はすべてサーバー側で自動的に行われるため、<strong>再ログインや再連携の操作は不要</strong>です。
+                </div>
+
+                <div class="mockup-container">
+
+                    <div class="smartphone">
+
+                        <div class="smartphone-header">連携設定</div>
+
+                        <div class="smartphone-body" style="justify-content: flex-start; padding-top: 25px;">
+
+                            <h4 style="color: #333; margin-bottom: 20px; align-self: flex-start;">🔗 外部サービス連携</h4>
+
+                            <div style="width: 100%; margin-bottom: 15px; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: bold; font-size: 0.95em;">💬 Slack</div>
+                                    <div style="font-size: 0.75em; color: #16a34a;">✅ 連携済み</div>
+                                </div>
+                                <button style="background: #e5e7eb; color: #666; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8em;">解除</button>
+                            </div>
+
+                            <div style="width: 100%; margin-bottom: 15px; background: #fff; border: 1px solid #ddd; border-radius: 8px; padding: 12px; display: flex; justify-content: space-between; align-items: center;">
+                                <div>
+                                    <div style="font-weight: bold; font-size: 0.95em;">📊 freee</div>
+                                    <div style="font-size: 0.75em; color: #9ca3af;">未連携</div>
+                                </div>
+                                <button style="background: #1e40af; color: #fff; border: none; padding: 6px 12px; border-radius: 4px; font-size: 0.8em;">連携する</button>
+                            </div>
+
+                            <p style="font-size: 0.7em; color: #9ca3af; margin-top: 10px; line-height: 1.5; align-self: flex-start;">
+                                ※ 連携は初回のみ必要です。<br>以降の認証更新はサーバーが自動で行います。
+                            </p>
+
+                        </div>
+
+                    </div>
+
+                    <div class="smartphone">
+
+                        <div class="smartphone-header">freee 連携認可</div>
+
+                        <div class="smartphone-body" style="justify-content: flex-start; padding-top: 25px;">
+
+                            <div style="width: 100%; text-align: center; padding: 20px 10px;">
+                                <div style="font-size: 2em; margin-bottom: 10px;">📊</div>
+                                <h4 style="color: #333; margin-bottom: 15px;">freee 人事労務</h4>
+                                <p style="font-size: 0.8em; color: #666; margin-bottom: 20px; line-height: 1.5;">
+                                    「勤怠アプリ」が以下の権限を<br>要求しています：
+                                </p>
+                                <div style="text-align: left; background: #f9fafb; border-radius: 6px; padding: 10px; margin-bottom: 20px; font-size: 0.78em; color: #555;">
+                                    ✅ 勤怠データの読み書き<br>
+                                    ✅ 従業員情報の読み取り
+                                </div>
+                                <button style="background: #16a34a; color: #fff; border: none; padding: 10px 40px; border-radius: 6px; font-weight: bold; font-size: 0.95em; width: 100%;">許可する</button>
+                                <button style="background: #fff; color: #666; border: 1px solid #ddd; padding: 8px 40px; border-radius: 6px; font-size: 0.85em; margin-top: 8px; width: 100%;">キャンセル</button>
                             </div>
 
                         </div>
@@ -2452,6 +2703,22 @@
                                         ・DatePicker/TimePickerの実装<br>
 
                                         ・選択された日時をISO8601形式等でAPI送信 (<code>manual_timestamp: "..."</code>)
+
+                                    </td>
+
+                                </tr>
+
+                                <tr>
+
+                                    <td><strong>休み報告モーダル</strong> <span class="badge new">New</span></td>
+
+                                    <td>
+
+                                        ・DatePickerの実装（対象日選択）<br>
+
+                                        ・休暇種別セレクター（有給休暇 / 欠勤）の実装<br>
+
+                                        ・API送信 (<code>POST /api/attendance/day-off</code>)
 
                                     </td>
 
@@ -2741,6 +3008,26 @@
 
                             </tr>
 
+                            <tr>
+
+                                <td><code>action_type</code></td>
+
+                                <td>VARCHAR(20)</td>
+
+                                <td><span class="badge new">New</span> 'clock_in', 'clock_out', 'day_off'</td>
+
+                            </tr>
+
+                            <tr>
+
+                                <td><code>leave_type</code></td>
+
+                                <td>VARCHAR(20)</td>
+
+                                <td><span class="badge new">New</span> 'paid_holiday', 'absence' (NULLable)</td>
+
+                            </tr>
+
                         </tbody>
 
                     </table>
@@ -2871,7 +3158,7 @@
 
                                 <td><strong>Phase 0</strong></td>
 
-                                <td>Cloudflare Tunnel設定、DB構築(user_integrations, job_queue含む)</td>
+                                <td>Cloudflare Tunnel設定、<strong>Docker Compose構築</strong>、DB構築(user_integrations, job_queue含む)</td>
 
                                 <td>3日</td>
 
