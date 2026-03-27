@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>勤怠打刻システム（スマホアプリ版）アーキテクチャ及び開発提案書</title>
+    <script src="https://cdn.jsdelivr.net/npm/mermaid/dist/mermaid.min.js"></script>
+    <script>
+        mermaid.initialize({ startOnLoad: true, theme: 'default' });
+    </script>
+    <style>
+        body {
+            font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 20px;
+            background-color: #f8f9fa;
+        }
+
+        .container {
+            background-color: #fff;
+            padding: 40px;
+            border-radius: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+
+        h1 {
+            text-align: center;
+            color: #2c3e50;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 15px;
+            margin-bottom: 40px;
+            font-size: 24px;
+        }
+
+        h2 {
+            color: #2c3e50;
+            border-left: 5px solid #3498db;
+            padding-left: 15px;
+            margin-top: 50px;
+            background-color: #f1f8ff;
+            padding: 10px 15px;
+            font-size: 18px;
+        }
+
+        h3 {
+            color: #34495e;
+            margin-top: 25px;
+            font-size: 16px;
+            border-bottom: 1px dashed #ccc;
+            padding-bottom: 5px;
+        }
+
+        p,
+        li,
+        td {
+            font-size: 14px;
+        }
+
+        .mermaid-container {
+            background-color: #fff;
+            border: 1px solid #e9ecef;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            overflow-x: auto;
+            text-align: center;
+        }
+
+        pre {
+            background-color: #2b2b2b;
+            color: #a9b7c6;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: Consolas, Monaco, monospace;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+        }
+
+        th,
+        td {
+            border: 1px solid #ddd;
+            padding: 10px;
+            text-align: left;
+        }
+
+        th {
+            background-color: #f4f6f8;
+            font-weight: bold;
+        }
+
+        .alert-box {
+            background-color: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 15px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>勤怠打刻システム（スマホアプリ版）アーキテクチャ及び開発提案書</h1>
+        <p>本ドキュメントは、現在進めている「勤怠打刻システムのスマホアプリ化」における、システムアーキテクチャ、APIインターフェース設計、および外部API連携の要件を定義したものです。</p>
+
+        <h2>1. システムアーキテクチャ図（フロントエンド 〜 GAS連携）</h2>
+        <p>バックエンドにはGoogle Apps Script (GAS) のWeb App機能（<code>doPost</code>/<code>doGet</code>）を採用し、サーバーレスアーキテクチャで構築します。</p>
+
+        <div class="mermaid-container">
+            <div class="mermaid">
+                sequenceDiagram
+                autonumber
+                actor User as ユーザー
+                participant App as スマホアプリ (iOS/Android)
+                participant GAS as GAS (バックエンド API)
+                participant GoogleAuth as Google Tokeninfo API
+                participant Sheets as Google Sheets
+                participant External as Slack / freee API
+
+                User->>App: 出勤ボタンをタップ
+                App->>App: Google Sign-In SDKで認証
+                App->>App: ID Token (JWT) 取得
+                App->>GAS: POST (JSON: id_token, action="clock_in")
+
+                rect rgb(240, 248, 255)
+                Note over GAS,GoogleAuth: 認証・認可フェーズ
+                GAS->>GoogleAuth: トークン有効性検証
+                GoogleAuth-->>GAS: payload (sub, email, aud)
+                GAS->>GAS: aud (Client ID) チェック
+                end
+
+                rect rgb(255, 245, 238)
+                Note over GAS,Sheets: 排他制御・データ更新フェーズ
+                GAS->>GAS: LockService.tryLock() (同時実行防止)
+                GAS->>Sheets: 打刻データのAppend
+                GAS->>External: 非同期/同期連携 (Slack通知, freee打刻)
+                GAS->>GAS: Lock解除
+                end
+
+                GAS-->>App: HTTP 200 OK (body: {statusCode: 200, ...})
+                App-->>User: 打刻完了UI表示
+            </div>
+        </div>
+
+        <h2>2. スマホアプリ側の実装スコープと技術要件</h2>
+        <p>アプリ側はプレゼンテーション層に徹し、ステートを持たないThin Clientとして実装します。</p>
+        <table>
+            <tr>
+                <th width="25%">コンポーネント</th>
+                <th>実装要件・留意点</th>
+            </tr>
+            <tr>
+                <td><strong>認証機能 (OIDC)</strong></td>
+                <td>Google Sign-In SDK (または AppAuth) を用いてOpenID Connectフローを実装し、<code>id_token</code> (JWT) を取得・保持してください。</td>
+            </tr>
+            <tr>
+                <td><strong>API通信 (HTTP Client)</strong></td>
+                <td>GASへのPOSTリクエストを実装します。GASの仕様によるCORSエラーを回避するため、リクエストヘッダーは <code>Content-Type: text/plain</code> などを利用するか、アプリ側のネイティブHTTPモジュールを利用してください。</td>
+            </tr>
+            <tr>
+                <td><strong>レスポンスハンドリング</strong></td>
+                <td><strong>【重要】</strong> GASは内部エラー発生時でもHTTP Status <code>200 OK</code> を返す仕様があります。必ずレスポンスボディ（JSON）内の <code>statusCode</code> フィールドをパースしてエラーハンドリングを行ってください。</td>
+            </tr>
+            <tr>
+                <td><strong>OAuth認可URLの処理</strong></td>
+                <td>Slack/freeeの初回連携機能を利用する場合、APIから返却される認可URLを <code>SFSafariViewController</code> や <code>Custom Tabs</code> で開き、GASのコールバック(<code>doGet</code>)に遷移させる処理が必要です。</td>
+            </tr>
+        </table>
+
+        <h2>3. APIインターフェース仕様</h2>
+        <p>RESTfulではなく、単一のエンドポイントに対して <code>action</code> パラメータでルーティングを行うRPCスタイルを採用しています。</p>
+
+        <h3>エンドポイント</h3>
+        <pre>POST https://script.google.com/macros/s/{DEPLOY_ID}/exec</pre>
+
+        <h3>リクエストペイロード (JSON)</h3>
+        <pre><code>{
+  "id_token": "eyJhbGciOiJSUzI1NiIs...", // 必須: Googleログインで取得したJWT
+  "action": "clock_in",              // 必須: アクション指定 (clock_in/clock_out/day_off)
+  "payload": {                       // 任意: 追加データが必要な場合
+    "location": "本社",
+    "device": "iOS"
+  }
+}</code></pre>
+
+        <h3>レスポンスペイロード (成功時)</h3>
+        <pre><code>{
+  "statusCode": 200,
+  "message": "出勤打刻を記録しました",
+  "timestamp": "2023-10-25T09:00:00Z"
+}</code></pre>
+
+        <h2>4. 外部APIアプリケーション作成と権限の申請</h2>
+        <p>本番稼働に向けて、以下の各プラットフォームにおける「開発者アプリ」の作成許可及び設定作業をお願いいたします。</p>
+        <ul>
+            <li><strong>Google Cloud Console (GCP)</strong>
+                <ul>
+                    <li><strong>目的:</strong> アプリ側で使用する「OAuth クライアント ID（Web/iOS/Android用）」の発行。</li>
+                    <li><strong>要件:</strong> GAS側でのトークン検証（<code>aud</code> クレームの照合）にこのClient IDを使用し、他アプリからのなりすましを防止します。</li>
+                    <li><strong>セキュリティ補足（Client IDの漏洩リスク）:</strong> Client ID自体は公開情報に近いため、万が一漏洩しても直接的なデータ流出には繋がりません。しかし、悪意ある第三者がフィッシングアプリ等に流用するリスクがあるため、バックエンド（GAS）側での厳密な <code>aud</code>（宛先）検証を必須実装とし、不正利用を完全にブロックします。</li>
+                </ul>
+            </li>
+            <li><strong>Slack API (api.slack.com)</strong>
+                <ul>
+                    <li><strong>目的:</strong> 打刻時のチャンネル自動通知。</li>
+                    <li><strong>要件:</strong> User Token（ユーザー権限トークン）の発行。Botとしてではなく、特定ユーザーのアカウントを通じて打刻通知を行う構成とします。必要なスコープは <code>chat:write</code> 等となります。</li>
+                </ul>
+            </li>
+            <li><strong>freee Developer (app.secure.freee.co.jp)</strong>
+                <ul>
+                    <li><strong>目的:</strong> freee人事労務へのタイムレコーダー情報書き込み。</li>
+                    <li><strong>要件:</strong> コールバックURIとしてGASのデプロイURLを登録し、Client ID / Secretを取得します。</li>
+                </ul>
+            </li>
+        </ul>
+
+        <h2>5. 【重要】freee API連携に関する運用アーキテクチャの提案</h2>
+        <div class="alert-box">
+            <strong>💡 提案事項： freeeのAPI認可（OAuthフロー）は「システム管理者アカウント」による一括管理とし、GASのScript PropertiesにRefresh Tokenを永続化する方式を推奨します。</strong>
+        </div>
+
+        <h3>背景と理由（技術的課題）</h3>
+        <p>通常、ユーザー単位でfreeeのOAuth認可を通す設計にした場合、以下の問題が発生します。</p>
+        <ol>
+            <li><strong>運用コストの増大:</strong> freeeの仕様上、API経由で打刻を行うためには、事前にfreee管理画面から該当ユーザーの「タイムレコーダー機能」を個別にONにする設定が必要です。</li>
+            <li><strong>UXの低下:</strong> 全従業員にアプリ初回起動時に「freeeログイン＆アクセス許可」のOAuthフローを踏ませる必要があります。</li>
+        </ol>
+
+        <h3>解決策（管理者トークン方式）</h3>
+        <p>GAS内部に「全権限を持つ管理者のfreee Access/Refresh Token」を保持させます。</p>
+        <ul>
+            <li>GASは打刻リクエストを受け取った際、ユーザーの <code>id_token</code> に含まれるメールアドレスから、内部の社員マスタ（スプレッドシート等）を照会し、対象ユーザーの freee上での <code>employee_id</code> を特定します。</li>
+            <li>GASが管理者のトークンを用いて、<code>POST /api/v1/time_clocks</code>（該当 employee_id 宛）を叩きます。</li>
+        </ul>
+
+        <h3>既存業務フローとの親和性について</h3>
+        <p>現在、事務の担当者様が管理者権限で打刻情報などの入力業務を行ってくださっていますが、<strong>本アーキテクチャはこの「管理者が一括してシステムに記録する」という現在の運用フローをそのままシステムに置き換える形となります。</strong>そのため、事務の方の現在の仕事内容や権限モデルを崩すことなく、極めてスムーズかつ安全に新しい打刻システムへ移行できるという大きなメリットがあります。</p>
+        <p>これにより、スマホアプリ開発側・従業員側の双方からfreee連携の複雑さを完全に隠蔽でき、保守性の高いアーキテクチャとなります。</p>
+
+        <hr style="margin-top: 40px; border: 0; border-top: 1px solid #ddd;">
+        <p style="text-align: right; color: #7f8c8d; font-size: 14px;">以上、ご確認のほどよろしくお願いいたします。</p>
+
+    </div>
+
+</body>
+</html>
