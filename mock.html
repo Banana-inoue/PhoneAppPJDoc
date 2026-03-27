@@ -1,0 +1,753 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>勤怠アプリ モックアップ</title>
+    <style>
+        :root {
+            --primary-color: #0f766e;
+            --accent-color: #1e40af;
+            --text-main: #1f2937;
+            --bg-body: #e5e7eb;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', 'Hiragino Sans', 'Yu Gothic', sans-serif;
+        }
+
+        body {
+            background: var(--bg-body);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            min-height: 100vh;
+            color: var(--text-main);
+        }
+
+        /* スマートフォンの外枠 */
+        .smartphone {
+            width: 320px;
+            height: 640px;
+            border: 12px solid #333;
+            border-radius: 30px;
+            background: #f8fafc;
+            position: relative;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* スクリーン管理 (SPA風の切り替え) */
+        .screen {
+            display: none;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            background: #f8fafc;
+            z-index: 10;
+        }
+
+        .screen.active {
+            display: flex;
+        }
+
+        .smartphone-header {
+            background: var(--primary-color);
+            color: white;
+            padding: 15px 10px;
+            font-size: 1em;
+            text-align: center;
+            font-weight: bold;
+            position: relative;
+        }
+
+        .btn-back {
+            position: absolute;
+            left: 15px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: white;
+            text-decoration: none;
+            font-size: 0.9em;
+            cursor: pointer;
+        }
+
+        .smartphone-body {
+            flex: 1;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+            overflow-y: auto;
+        }
+
+        /* ログイン画面用 */
+        .ui-login-btn {
+            background: white;
+            border: 1px solid #ddd;
+            padding: 12px 24px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            font-weight: bold;
+            color: #333;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+
+        .ui-login-btn:active {
+            background: #f3f4f6;
+        }
+
+        /* Google認証画面用モックアップスタイル */
+        .google-auth-container {
+            width: 100%;
+            background: white;
+            border-radius: 8px;
+            padding: 30px 20px;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+            text-align: center;
+        }
+
+        .google-logo {
+            font-size: 1.5em;
+            font-weight: bold;
+            margin-bottom: 10px;
+        }
+
+        .google-logo span:nth-child(1) {
+            color: #4285F4;
+        }
+
+        .google-logo span:nth-child(2) {
+            color: #EA4335;
+        }
+
+        .google-logo span:nth-child(3) {
+            color: #FBBC05;
+        }
+
+        .google-logo span:nth-child(4) {
+            color: #4285F4;
+        }
+
+        .google-logo span:nth-child(5) {
+            color: #34A853;
+        }
+
+        .google-logo span:nth-child(6) {
+            color: #EA4335;
+        }
+
+        .google-input {
+            width: 100%;
+            padding: 12px;
+            margin: 20px 0;
+            border: 1px solid #dadce0;
+            border-radius: 4px;
+            font-size: 1em;
+        }
+
+        .google-input:focus {
+            border-color: #1a73e8;
+            outline: none;
+            box-shadow: inset 0 0 0 1px #1a73e8;
+        }
+
+        .google-btn {
+            background: #1a73e8;
+            color: white;
+            border: none;
+            padding: 10px 24px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            float: right;
+        }
+
+        /* メイン画面用 */
+        .settings-icon {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 1.5em;
+            cursor: pointer;
+        }
+
+        .ui-time {
+            font-size: 3.5em;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 30px;
+            font-family: monospace;
+            text-align: center;
+        }
+
+        .ui-date {
+            text-align: center;
+            color: #666;
+            margin-bottom: 5px;
+            font-size: 1.1em;
+        }
+
+        .ui-btn {
+            width: 200px;
+            height: 200px;
+            border-radius: 50%;
+            border: none;
+            color: white;
+            font-size: 1.8em;
+            font-weight: bold;
+            cursor: pointer;
+            box-shadow: 0 6px 15px rgba(0, 0, 0, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.1s;
+        }
+
+        .ui-btn:active {
+            transform: scale(0.95);
+        }
+
+        .ui-btn.in {
+            background: linear-gradient(135deg, #0d9488, #0f766e);
+        }
+
+        .ui-btn.out {
+            background: linear-gradient(135deg, #ef4444, #dc2626);
+        }
+
+        .ui-link {
+            margin-top: 25px;
+            color: var(--primary-color);
+            text-decoration: underline;
+            font-size: 1em;
+            cursor: pointer;
+            padding: 10px;
+        }
+
+        /* モーダル (オーバーレイ表示) */
+        .overlay {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0, 0, 0, 0.6);
+            z-index: 100;
+            justify-content: center;
+            align-items: flex-end;
+        }
+
+        .overlay.active {
+            display: flex;
+        }
+
+        .ui-modal {
+            width: 100%;
+            background: white;
+            border-top-left-radius: 20px;
+            border-top-right-radius: 20px;
+            padding: 25px 20px;
+            display: flex;
+            flex-direction: column;
+            animation: slideUp 0.3s ease-out;
+            max-height: 80%;
+            overflow-y: auto;
+        }
+
+        .ui-modal.center {
+            width: 80%;
+            border-radius: 12px;
+            align-items: center;
+            margin-bottom: 50%;
+            animation: fadeIn 0.2s ease-out;
+            text-align: center;
+            padding: 30px 20px;
+        }
+
+        @keyframes slideUp {
+            from {
+                transform: translateY(100%);
+            }
+
+            to {
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes fadeIn {
+            from {
+                opacity: 0;
+                transform: scale(0.9);
+            }
+
+            to {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        .modal-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 20px;
+        }
+
+        .modal-title {
+            color: var(--primary-color);
+            font-size: 1.2em;
+        }
+
+        .modal-close {
+            font-size: 1.5em;
+            cursor: pointer;
+            color: #999;
+        }
+
+        .ui-input-group {
+            margin-bottom: 20px;
+            width: 100%;
+        }
+
+        .ui-label {
+            font-size: 0.85em;
+            color: #666;
+            margin-bottom: 8px;
+            display: block;
+        }
+
+        .ui-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 6px;
+            font-size: 1em;
+        }
+
+        .ui-btn-submit {
+            background: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 8px;
+            font-weight: bold;
+            font-size: 1.1em;
+            cursor: pointer;
+            margin-top: 10px;
+            width: 100%;
+        }
+
+        /* 連携設定画面用リスト */
+        .settings-list {
+            width: 100%;
+        }
+
+        .settings-item {
+            background: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #e5e7eb;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .status-badge {
+            font-size: 0.8em;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+
+        .status-badge.off {
+            background: #e5e7eb;
+            color: #666;
+        }
+
+        .status-badge.on {
+            background: #dcfce7;
+            color: #16a34a;
+        }
+
+        /* ローディングアニメーション */
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid rgba(255, 255, 255, 0.3);
+            border-top: 4px solid white;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        .spinner.blue {
+            border: 4px solid rgba(26, 115, 232, 0.2);
+            border-top: 4px solid #1a73e8;
+        }
+
+        @keyframes spin {
+            0% {
+                transform: rotate(0deg);
+            }
+
+            100% {
+                transform: rotate(360deg);
+            }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="smartphone">
+
+        <div id="screen-splash" class="screen active" style="background: var(--primary-color); color: white;">
+            <div class="smartphone-body">
+                <h1 style="font-size: 2em; margin-bottom: 10px;">🕒</h1>
+                <h2>勤怠システム v4</h2>
+            </div>
+        </div>
+
+        <div id="screen-login" class="screen">
+            <div class="smartphone-header">ログイン</div>
+            <div class="smartphone-body">
+                <h2 style="color: #333; margin-bottom: 40px; text-align: center;">業務用勤怠アプリ<br><span style="font-size: 0.6em; color: #666;">(GAS版)</span></h2>
+
+                <button class="ui-login-btn" onclick="startGoogleLogin()">
+                    <span style="font-size: 1.2em; color: #ea4335;">G</span> Googleでログイン
+                </button>
+
+                <p style="font-size: 0.8em; color: #9ca3af; margin-top: 20px; text-align: center; line-height: 1.5;">
+                    ※ 自社ドメインのアカウントで<br>ログインしてください
+                </p>
+            </div>
+        </div>
+
+        <div id="screen-google-auth" class="screen" style="background: white;">
+            <div style="height: 4px; background: #e8eaed; width: 100%; position: relative;">
+                <div id="google-progress" style="height: 100%; background: #1a73e8; width: 30%; transition: width 0.3s;"></div>
+            </div>
+            <div class="smartphone-body" style="justify-content: flex-start; padding-top: 40px;">
+                <div class="google-auth-container">
+                    <div class="google-logo">
+                        <span>G</span><span>o</span><span>o</span><span>g</span><span>l</span><span>e</span>
+                    </div>
+                    <h3 id="google-auth-title" style="margin-bottom: 10px; font-weight: 500;">ログイン</h3>
+                    <p id="google-auth-subtitle" style="font-size: 0.9em; color: #202124;">「業務用勤怠アプリ」に移動</p>
+
+                    <div id="google-step-email" style="display: block; margin-top: 30px;">
+                        <input type="email" id="google-email-input" class="google-input" placeholder="メールアドレスまたは電話番号" value="taro@yourcompany.com">
+                        <div style="text-align: left; margin-bottom: 40px;">
+                            <a href="#" style="color: #1a73e8; font-size: 0.85em; text-decoration: none; font-weight: 500;">メールアドレスを忘れた場合</a>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; align-items: center;">
+                            <a href="#" style="color: #1a73e8; font-size: 0.9em; text-decoration: none; font-weight: 500;">アカウントを作成</a>
+                            <button class="google-btn" onclick="nextGoogleStep()">次へ</button>
+                        </div>
+                    </div>
+
+                    <div id="google-step-password" style="display: none; margin-top: 20px;">
+                        <div style="display: inline-flex; align-items: center; border: 1px solid #dadce0; border-radius: 16px; padding: 4px 12px; margin-bottom: 20px; font-size: 0.85em; color: #3c4043;">
+                            <span style="margin-right: 8px;">👤</span> <span id="display-email">taro@yourcompany.com</span>
+                        </div>
+                        <div style="text-align: left; font-size: 1.1em; color: #202124; margin-bottom: 5px;">ようこそ</div>
+                        <input type="password" class="google-input" placeholder="パスワードを入力" value="password123">
+                        <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 20px;">
+                            <a href="#" style="color: #1a73e8; font-size: 0.9em; text-decoration: none; font-weight: 500;">パスワードをお忘れの場合</a>
+                            <button class="google-btn" onclick="finishGoogleAuth()">次へ</button>
+                        </div>
+                    </div>
+
+                    <div id="google-step-loading" style="display: none; margin-top: 40px; flex-direction: column; align-items: center;">
+                        <div class="spinner blue"></div>
+                        <p style="margin-top: 20px; color: #5f6368; font-size: 0.9em;">アカウント情報を確認しています...</p>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+
+        <div id="screen-main" class="screen">
+            <div class="smartphone-header">打刻</div>
+            <div class="smartphone-body">
+                <div class="settings-icon" onclick="navigateTo('screen-settings')">⚙️</div>
+
+                <div style="width: 100%;">
+                    <div class="ui-date" id="current-date">2026/02/10 (火)</div>
+                    <div class="ui-time" id="current-time">08:55:00</div>
+                </div>
+
+                <button id="main-punch-btn" class="ui-btn in" onclick="executePunch('通常打刻')">
+                    <span id="punch-btn-text">出勤</span>
+                    <small id="punch-btn-sub" style="font-size:0.5em; font-weight:normal; margin-top:5px;">Clock In</small>
+                </button>
+
+                <div class="ui-link" onclick="openModal('modal-manual')">日時を指定して打刻</div>
+                <div class="ui-link" style="color: #1e40af; margin-top: 0;" onclick="openModal('modal-dayoff')">🏖️ 休み報告</div>
+            </div>
+        </div>
+
+        <div id="screen-settings" class="screen">
+            <div class="smartphone-header">
+                <span class="btn-back" onclick="navigateTo('screen-main')">◀ 戻る</span>
+                外部連携設定
+            </div>
+            <div class="smartphone-body" style="justify-content: flex-start; padding-top: 30px;">
+                <div class="settings-list">
+                    <div class="settings-item">
+                        <div>
+                            <strong>Slack 連携</strong>
+                            <div style="font-size: 0.8em; color: #666;">打刻通知を送信します</div>
+                        </div>
+                        <span class="status-badge on">連携済み</span>
+                    </div>
+                    <div class="settings-item">
+                        <div>
+                            <strong>freee人事労務</strong>
+                            <div style="font-size: 0.8em; color: #666;">実績を一括登録します</div>
+                        </div>
+                        <span class="status-badge off" style="text-decoration: underline; cursor:pointer;" onclick="alert('OAuth認可画面(Webview)へ遷移します')">未設定 (タップ)</span>
+                    </div>
+                </div>
+
+                <button style="margin-top: auto; width: 100%; padding: 15px; border: 1px solid #ef4444; color: #ef4444; background: white; border-radius: 8px; font-weight: bold; cursor: pointer;" onclick="logout()">
+                    ログアウト
+                </button>
+            </div>
+        </div>
+
+        <div id="modal-manual" class="overlay">
+            <div class="ui-modal">
+                <div class="modal-header">
+                    <div class="modal-title" id="manual-modal-title">手動打刻 (出勤)</div>
+                    <div class="modal-close" onclick="closeModal('modal-manual')">✕</div>
+                </div>
+                <div class="ui-input-group">
+                    <label class="ui-label">日付</label>
+                    <input type="date" id="manual-date" class="ui-input">
+                </div>
+                <div class="ui-input-group">
+                    <label class="ui-label">時刻</label>
+                    <input type="time" id="manual-time" class="ui-input">
+                </div>
+                <div class="ui-input-group">
+                    <label class="ui-label">メモ (任意)</label>
+                    <input type="text" class="ui-input" placeholder="例: 電車遅延">
+                </div>
+                <button class="ui-btn-submit" onclick="executePunch('手動打刻')">この日時で打刻</button>
+            </div>
+        </div>
+
+        <div id="modal-dayoff" class="overlay">
+            <div class="ui-modal">
+                <div class="modal-header">
+                    <div class="modal-title" style="color: #1e40af;">🏖️ 休み報告</div>
+                    <div class="modal-close" onclick="closeModal('modal-dayoff')">✕</div>
+                </div>
+                <div class="ui-input-group">
+                    <label class="ui-label">日付</label>
+                    <input type="date" id="dayoff-date" class="ui-input">
+                </div>
+                <div class="ui-input-group">
+                    <label class="ui-label">休暇種別</label>
+                    <select class="ui-input">
+                        <option selected>有給休暇</option>
+                        <option>欠勤</option>
+                    </select>
+                </div>
+                <div class="ui-input-group">
+                    <label class="ui-label">メモ (任意)</label>
+                    <input type="text" class="ui-input" placeholder="例: 通院のため">
+                </div>
+                <button class="ui-btn-submit" style="background: #1e40af;" onclick="executePunch('休み報告')">休みを報告する</button>
+            </div>
+        </div>
+
+        <div id="modal-loading" class="overlay" style="align-items: center; background: rgba(0,0,0,0.8);">
+            <div style="display: flex; flex-direction: column; align-items: center; color: white;">
+                <div class="spinner"></div>
+                <div style="margin-top: 20px; font-weight: bold;">通信中...</div>
+            </div>
+        </div>
+
+        <div id="modal-success" class="overlay">
+            <div class="ui-modal center">
+                <div style="font-size: 3em; margin-bottom: 10px;">✅</div>
+                <h3 style="margin-bottom: 15px; color: #1f2937;" id="success-title">打刻完了</h3>
+                <p style="color: #666; font-size: 0.9em; margin-bottom: 25px;" id="success-message">お疲れ様でした。<br>Slackへ通知を送信しました。</p>
+                <button class="ui-btn-submit" onclick="finishPunch()">閉じる</button>
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        // --- 画面遷移管理 ---
+        function navigateTo(screenId) {
+            document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'));
+            document.getElementById(screenId).classList.add('active');
+        }
+
+        function openModal(modalId) {
+            document.getElementById(modalId).classList.add('active');
+
+            if (modalId === 'modal-manual') {
+                document.getElementById('manual-modal-title').innerText = isClockedIn ? "手動打刻 (退勤)" : "手動打刻 (出勤)";
+            }
+        }
+
+        function closeModal(modalId) {
+            document.getElementById(modalId).classList.remove('active');
+        }
+
+        // --- 起動時のスプラッシュ制御 ---
+        setTimeout(() => {
+            navigateTo('screen-login');
+        }, 1500);
+
+        // --- Google認証フロー制御 ---
+        function startGoogleLogin() {
+            // UI状態のリセット
+            document.getElementById('google-step-email').style.display = 'block';
+            document.getElementById('google-step-password').style.display = 'none';
+            document.getElementById('google-step-loading').style.display = 'none';
+            document.getElementById('google-auth-title').style.display = 'block';
+            document.getElementById('google-auth-subtitle').style.display = 'block';
+            document.getElementById('google-progress').style.width = '30%';
+
+            navigateTo('screen-google-auth');
+        }
+
+        function nextGoogleStep() {
+            const email = document.getElementById('google-email-input').value;
+            if (!email) {
+                alert("メールアドレスを入力してください");
+                return;
+            }
+
+            // パスワード入力画面へ切り替え
+            document.getElementById('display-email').innerText = email;
+            document.getElementById('google-step-email').style.display = 'none';
+            document.getElementById('google-auth-title').style.display = 'none';
+            document.getElementById('google-auth-subtitle').style.display = 'none';
+            document.getElementById('google-step-password').style.display = 'block';
+            document.getElementById('google-progress').style.width = '70%';
+        }
+
+        function finishGoogleAuth() {
+            // ローディング画面へ切り替え
+            document.getElementById('google-step-password').style.display = 'none';
+            document.getElementById('google-step-loading').style.display = 'flex';
+            document.getElementById('google-progress').style.width = '100%';
+
+            // 疑似的な認証遅延 (1.5秒後にメイン画面へ)
+            setTimeout(() => {
+                navigateTo('screen-main');
+            }, 1500);
+        }
+
+        // --- 時計のリアルタイム更新 ---
+        function updateClock() {
+            const now = new Date();
+            const days = ['日', '月', '火', '水', '木', '金', '土'];
+
+            const yyyy = now.getFullYear();
+            const mm = String(now.getMonth() + 1).padStart(2, '0');
+            const dd = String(now.getDate()).padStart(2, '0');
+            const dayStr = days[now.getDay()];
+
+            const hh = String(now.getHours()).padStart(2, '0');
+            const min = String(now.getMinutes()).padStart(2, '0');
+            const sec = String(now.getSeconds()).padStart(2, '0');
+
+            document.getElementById('current-date').innerText = `${yyyy}/${mm}/${dd} (${dayStr})`;
+            document.getElementById('current-time').innerText = `${hh}:${min}:${sec}`;
+
+            if (!document.getElementById('manual-date').value) {
+                const dateInputVal = `${yyyy}-${mm}-${dd}`;
+                document.getElementById('manual-date').value = dateInputVal;
+                document.getElementById('dayoff-date').value = dateInputVal;
+                document.getElementById('manual-time').value = `${hh}:${min}`;
+            }
+        }
+        setInterval(updateClock, 1000);
+        updateClock();
+
+        // --- 打刻のロジック (疑似) ---
+        let isClockedIn = false;
+
+        function executePunch(type) {
+            document.querySelectorAll('.overlay').forEach(o => o.classList.remove('active'));
+            openModal('modal-loading');
+
+            setTimeout(() => {
+                closeModal('modal-loading');
+
+                const titleEl = document.getElementById('success-title');
+                const msgEl = document.getElementById('success-message');
+
+                if (type === '休み報告') {
+                    titleEl.innerText = "報告完了";
+                    msgEl.innerHTML = "休暇の登録が完了しました。<br>Slack・freeeへ連携しました。";
+                } else {
+                    titleEl.innerText = "打刻完了";
+                    if (!isClockedIn) {
+                        msgEl.innerHTML = "おはようございます。<br>出勤を記録しました。";
+                        togglePunchButton(true);
+                    } else {
+                        msgEl.innerHTML = "お疲れ様でした。<br>退勤を記録しfreeeへ連携しました。";
+                        togglePunchButton(false);
+                    }
+                }
+
+                openModal('modal-success');
+            }, 1000);
+        }
+
+        function finishPunch() {
+            closeModal('modal-success');
+        }
+
+        // --- UIの切り替え ---
+        function togglePunchButton(toClockOut) {
+            isClockedIn = toClockOut;
+            const btn = document.getElementById('main-punch-btn');
+            const text = document.getElementById('punch-btn-text');
+            const sub = document.getElementById('punch-btn-sub');
+
+            if (isClockedIn) {
+                btn.classList.remove('in');
+                btn.classList.add('out');
+                text.innerText = "退勤";
+                sub.innerText = "Clock Out";
+            } else {
+                btn.classList.remove('out');
+                btn.classList.add('in');
+                text.innerText = "出勤";
+                sub.innerText = "Clock In";
+            }
+        }
+
+        function logout() {
+            isClockedIn = false;
+            togglePunchButton(false);
+            navigateTo('screen-login');
+        }
+    </script>
+</body>
+</html>
