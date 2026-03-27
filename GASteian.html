@@ -115,6 +115,35 @@
         <h2>1. システムアーキテクチャ図（フロントエンド 〜 GAS連携）</h2>
         <p>バックエンドにはGoogle Apps Script (GAS) のWeb App機能（<code>doPost</code>/<code>doGet</code>）を採用し、サーバーレスアーキテクチャで構築します。</p>
 
+        <h3>1-1. 認証フロー（初回ログイン・サイレントログイン）</h3>
+        <p>Google Sign-In SDKの<strong>サイレントログイン</strong>機能を利用するため、初回のみ画面でのログイン操作が必要ですが、2回目以降はバックグラウンドで自動的にトークンを更新します。そのため、<strong>毎回の再ログインは不要</strong>となり、従業員の打刻の手間を取らせません。</p>
+
+        <div class="mermaid-container">
+            <div class="mermaid">
+                sequenceDiagram
+                autonumber
+                actor User as ユーザー
+                participant App as スマホアプリ (iOS/Android)
+                participant Google as Google 認証サーバー
+
+                User->>App: アプリを起動
+                App->>App: 過去のログイン状態を確認
+
+                alt 未ログイン（初回のみ）
+                App->>User: Googleログイン画面を表示
+                User->>Google: アカウント選択・ログイン認可
+                Google-->>App: ID Token / Refresh Token 発行
+                else ログイン済み（2回目以降）
+                Note over App,Google: サイレントログイン（再ログイン不要）
+                App->>Google: バックグラウンドでトークン更新リクエスト
+                Google-->>App: 新しいID Token発行
+                end
+
+                App-->>User: 打刻画面を表示（API通信準備完了）
+            </div>
+        </div>
+
+        <h3>1-2. 打刻・データ連携フロー</h3>
         <div class="mermaid-container">
             <div class="mermaid">
                 sequenceDiagram
